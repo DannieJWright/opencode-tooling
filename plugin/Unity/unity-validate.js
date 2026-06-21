@@ -555,7 +555,7 @@ export const UnityValidatePlugin = async ({ directory, worktree }) => {
 					];
 
 					if (args.testFilter) {
-						testArgs.push(`-testFilter "${args.testFilter}"`);
+						testArgs.push(`-testfilter "${args.testFilter}"`);
 					}
 
 					const { exitCode, log: logFile } = await runUnity(
