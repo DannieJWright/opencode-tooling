@@ -71,16 +71,17 @@ Users register this repository in `~/.config/opencode/remote-config.json` or `.o
 
 ```json
 {
-  "repos": [
+  "installMethod": "copy",
+  "repositories": [
     {
       "url": "git@github.com:DannieJWright/opencode-tooling.git",
-      "sync": "blocking",
-      "install": "link",
       "ref": "main"
     }
   ]
 }
 ```
+
+> **Important:** `"installMethod": "copy"` is required. The plugins in this repository use npm package imports (e.g., `@opencode-ai/plugin`), which fail when installed via symlinks.
 
 Reference: [opencode-remote-config README](https://github.com/jgordijn/opencode-remote-config)
 
