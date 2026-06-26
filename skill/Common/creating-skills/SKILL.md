@@ -92,14 +92,15 @@ Create a configuration table containing all extracted variables.
 | `Default: <value>` | Auto-uses value, user may override |
 | `Example: <value>` | Requires user to supply before proceeding |
 
+
 ### Table Structure
 
-Place this near the top of the generated skill, after the overview:
+Place this near the top of the generated skill, after the overview, keep in mind there are instructions within the following markdown that MUST also need to be included in the generated skill for the invoking agent:
 
 ```markdown
 ## Configuration
 
-Set these before starting:
+These configurable values are for you (the AI agent). It is critical that you keep them in mind within the context of your input, as they serve as placeholders within your input. Values defined with "Default"s should be used by default, unless requested by the user to use a different value. Values defined with "Example" (no default) MUST be obtained from the context of your prompt based on the "purpose" for that value (ask the user if there is ambiguity). 
 
 | Variable | Purpose | Default/Example |
 |----------|---------|-----------------|
@@ -183,7 +184,7 @@ Include all configuration variables that a subagent needs. Use parenthesized var
 
 ## Step 8: Write SKILL.md
 
-Generate the complete skill document following this structure:
+Generate the complete skill document. The structure below is a **minimum baseline** — a starting point. Add any additional sections that improve clarity, are relevant to the skill's domain, or help the invoking agent use the skill effectively. The goal is a well-structured, self-contained document; the template is a floor, not a ceiling.
 
 ```yaml
 ---
@@ -221,6 +222,19 @@ description: Use when [specific triggering conditions and symptoms]
 [Specific pitfalls]
 ```
 
+### Adding Extra Sections
+
+Beyond the baseline above, consider adding sections that fit the skill:
+
+- **Rules / Constraints** — behavioral guardrails the agent should follow
+- **Examples** — concrete input/output pairs to disambiguate intent
+- **Decision Flow** — conditions or branching logic for complex workflows
+- **References** — links to docs, prior research, or related skills
+- **Tips / Best Practices** — heuristics that improve results
+- **Troubleshooting** — common failure modes and how to recover
+
+There are no prescribed section names or a hard limit. Structure serves content, not the reverse.
+
 ### Frontmatter Rules
 
 - `name`: lowercase hyphenated, only letters/numbers/hyphens
@@ -230,6 +244,8 @@ description: Use when [specific triggering conditions and symptoms]
 ## Step 9: Verify
 
 ### Generated Skill Checklist
+
+These are minimum checks. A well-crafted skill may pass additional self-review depending on its complexity.
 
 - [ ] Frontmatter has `description` starting with "Use when..."
 - [ ] Description describes triggers, NOT workflow
