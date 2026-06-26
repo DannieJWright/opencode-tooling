@@ -385,7 +385,8 @@ When spawning a subagent for a given subpoint, provide that subagent with:
 
 
 
-
+⚙websearch_web_search_exa [query=Unity uGUI vs UI Toolkit comparison 2024 2025 2026 2D game UI]
+Streamable HTTP error: Error POSTing to endpoint: {"jsonrpc":"2.0","error":{"code":-32000,"message":"You've hit Exa's free MCP rate limit. To continue using without limits, create your own Exa API key.\n\nFix: Create API key at https://dashboard.exa.ai/api-keys , then either:\n- Set the header: Authorization: Bearer YOUR_EXA_API_KEY\n- Or use the URL: https://mcp.exa.ai/mcp?exaApiKey=YOUR_EXA_API_KEY"},"id":null}
 
 
 
@@ -460,3 +461,184 @@ When spawning a subagent for a given subpoint, provide that subagent with:
 
 
 
+Help me write a user agent skill. The purpose of the skill is to generate a "guide" document for the the skill at 'skill/research/phase-1-overview/Skill.md' by establishing the "big ideas" or "core components" to a project.
+
+This is a workflow skill meant to first capture the key components/topic of the work to be researched directly from the user, then to research the appropriate "big ideas" associated with that topic. The skill needs to start by collecting the following information (tailored towards software development):
+- What is the general topic being researched?
+    - eg) "2D game development on the Unity engine", "Frontend website development", "New backend service to manage okta groups", etc
+    - the point is to help narrow the scope of the research, establish associated topics to drive research, and to ensure the consistency between research topics 
+- What is the tech stack?
+    - Need to find out specifics about the proposed topic. Some information can be directly found from the users topic (for example using "Unity game engine" means the programming language will be "C#")
+    - Is the topic about fronend/backend work? What programming language(s) are expected to be used with it? Required framework constrains?
+    - Keep it broad, this step does not need to decide on all the specifics (like all the frameworks, necessary infrastructure, design patterns, etc), just the core details that serve as immutable requirements for the work being researched/planned.
+    - Ask 2-5 follow up questions to narrow down the requirements.
+    - Allow the user to provide as much detail as they would like for this step, as some users may have a specific scenario in mind.
+
+Once the agent has a general understanding of what is in scope and what is out of scope, they should start a couple independent subagents to find out what the "big ideas"/"core featues" of the tech stack that will need to be research later in further depth.
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- Summary from big-overview prompt - TODO - change footer from line numbers to files last edited commit sha -->
+Aggressively use subagents to summarize each "section" of the docs located at './docs/research/big-picture/' (each section starts with the same number ie, 01.a-..., 01.b-..., 01.c-..., are all the same section, and are different from 02.a-..., 02.b-... which is another section). **CRITICAL: DO NOT READ ANYTHING YOURSELF, SPAWN A SUBAGENT TO REVIEW EACH SECTION** (one subagent per section). **CRITICAL: DO NOT SPAWN PARALLEL SUBAGENTS** - only spawn one subagent at a time. Have them output their summaries under 'docs/research/summaries/<section>-summary.md' where the file-name should be the section summarized (01.a-01.z -> '01-summary.md'
+Please make sure to request the following formatting from all summary subagents:
+```
+# Chapter NN Summary — <Title>
+
+<1-line scope>
+
+---
+
+## NN.a — <Topic>
+
+**What it is / Core rule / Why:** <one-liner>
+
+### <Sub-area 1>
+- **Key label:** detail
+- **Key label:** detail
+
+### <Sub-area 2>
+1. numbered item
+2. numbered item
+
+| table for comparison/decision |
+
+---
+
+## NN.b — <Topic>
+
+(same pattern repeats)
+
+---
+
+## Cross-Cutting Takeaways
+
+### Architecture Decision
+- decision bullets
+
+### Data Flow
+- flow bullets
+
+### Modern Patterns Worth Adopting
+- pattern bullets
+
+### Anti-Pattern Checklist
+1. bad pattern — fix
+2. bad pattern — fix
+
+---
+
+*Generated from: NN.a (lines), NN.b (lines), ...*
+```
+Styling: No H4+. --- between sections. Bold-colon bullets. Code blocks for technical identifiers. Tables for decision-making content.
+Key stylistic notes:
+1. H1 Header - # Chapter NN Summary — <Topic Title> + 1-line scope + ---
+2. H2 Subsections - ## NN.X — <Sub-topic> (one per source doc) + --- separator
+3. Intro line - **What it is:** or **Core rule:** one-liner
+4. H3 Sub-subsections - Pattern breakdowns, best practices, APIs, pitfalls
+5. Content format - Bold-colon bullets, numbered lists, inline code for technical refs
+6. Tables - For comparisons, decisions, type listings
+7. Cross-Cutting Takeaways - Final H2 before footer, covers architecture decisions, data flow, patterns, anti-pattern checklist
+8. Footer - *Generated from: NN.a (NNN lines), ...*
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- phase 2 - generate descisions doc -->
+
+<!-- original prompt -->
+Please review the summary docs at 'docs/research/summaries/' and establish a "decision" doc at docs/research/dicisions.md. This file should contain all of the big dicisions that need to be made in order to implement "a 2D gladiator fighting game in the Unity game engine C# programming language (2026)" based on the existing summaries. The doc should cover all of the conflicting details (such as multiple options for frameworks, differing design patterns, differing practices, major game design choices) necessary for the techstack and based on the input documents. Provide suggestions for which items should be prefered (along with the reasoning for why one choice is prefered over others). List each of the items that needs a dicision using unmarked checkboxes with a "decision" subsection defaulted to "UNDECIDED" (since no decision has been made yet). Be sure to reference which file the conflicting items came from. Keep in mind that decisions may effect other sections, so this needs to be a cummulative document taking into account all of the summary files. Include a separate list with expected/required decisions for design patterns/best practices/architecture decisions that do not have multiple options and are there for automatic requirements for the expected project that will be produced by this analysis.
+
+
+<!-- skill -->
+
+## Output File Format
+
+```markdown
+# Research Decisions — [PROJECT TITLE]
+
+> Cumulative decision register derived from `docs/research/summaries/` source documents.
+> Each item lists conflicting options, reasoning for preferred choice, and current decision state.
+
+---
+
+## Table of Contents
+
+- [Mandatory Requirements](#mandatory-requirements)
+- [CATEGORY-1 Decisions](#category-1-decisions)
+- [CATEGORY-2 Decisions](#category-2-decisions)
+- ...
+
+---
+
+## Mandatory Requirements
+
+### Requirements with no viable alternatives — automatic constraints for this project.
+
+- [x] **Requirement Name** — One-line justification. *(source-ref)*
+- [x] **Requirement Name** — One-line justification. *(source-ref)*
+
+---
+
+## Category Decisions
+
+### Prefix-NN: Decision Title
+
+**Options:**
+- **Option A** — Brief description, key tradeoff
+- **Option B** — Brief description, key tradeoff
+- **Option C** — Brief description, key tradeoff
+
+**Sources:** `source-ref-1` (topic covered), `source-ref-2` (detail covered)
+
+> **Preferred:** Chosen option + 2-3 sentence reasoning. Reference architectural constraints, performance, or scope. Why this over Others.
+
+**Decision:** UNDECIDED | LOCKED | DEFERRED
+
+---
+
+## Cross-Decision Dependencies
+
+| Decision | Affects | Notes |
+|----------|---------|-------|
+
+---
+
+## Decisions List Summary
+
+| ID | Category | Decision | Status |
+|----|----------|----------|--------|
+
+---
+
+*Last updated: YYYY-MM-DD*
+*Source documents: N-summary.md through M-summary.md*
+```
+
+Key structural rules the AI agent follows:
+1. Mandatory first — no-alternative constraints listed before debatable decisions
+2. ID prefix by category — Arch-, Comb-, UI-, etc. for cross-referencing
+3. Options always enumerated — never just a decision, always the alternatives considered
+4. Sources cited — back-references to source documents in parens
+5. Preferred block in blockquote — separate reasoning from options
+6. Decision state explicit — UNDECIDED/LOCKED/DEFERRED, not implied
+7. Summary table at bottom — machine-parseable status register
+8. Dependency matrix — shows which decisions couple together
