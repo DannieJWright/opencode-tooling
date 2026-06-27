@@ -2,3 +2,4 @@
 
 lancedb/*
 models/*
+compactions/*
