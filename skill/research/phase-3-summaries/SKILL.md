@@ -1,5 +1,5 @@
 ---
-name: phase-2-summaries
+name: phase-3-summaries
 description: >
   Use when planning a project by researching multiple topics via sequential subagents.
   Triggers: "lets make the phase 2 summary docs", "research phase 2"

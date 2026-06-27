@@ -1,9 +1,9 @@
 ---
-name: phase-2-summaries
+name: phase-2-initial-research
 description: Deep research per section/subsection. Produces granular research files with implementation details, source references, and technical findings for each subsection.
 ---
 
-# Phase 2: Deep Topic Research
+# Phase 2: Initial Deep Topic Research
 
 ## Purpose
 Conduct deep, focused research for each subsection identified in Phase 0 and Phase 1. This phase produces granular research files containing implementation details, technical patterns, framework options, and validated source references. These files are the raw material for Phase 3 summaries and Phase 4 decisions.
@@ -98,7 +98,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 You are a research agent for a [TECH_STACK] project.
 
 Topic: [subsection description]
-Output file: research/phase-2-deep/<section>.<subsection>-<desc>.md
+Output file: research/phase-2-initial-research/<section>.<subsection>-<desc>.md
 
 Context from Phase 1 overview:
 [Paste relevant Phase 1 findings for this topic]

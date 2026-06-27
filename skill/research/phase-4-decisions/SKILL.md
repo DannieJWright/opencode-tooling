@@ -1,5 +1,5 @@
 ---
-name: phase-3-decisions
+name: phase-4-decisions
 description: >
   Generate and maintain the research decisions register for the 2D gladiator
   fighting game project. Reads summary documents from docs/research/summaries/,
