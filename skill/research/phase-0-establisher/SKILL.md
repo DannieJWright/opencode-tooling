@@ -65,31 +65,36 @@ This is the core loop:
 
 ### Step 4: Structure the Output
 
-Organize discovered topics into a structured hierarchy:
+Organize discovered topics into a structured hierarchy. For each topic, **save the web search references found during discovery** — these will jumpstart Phase 1 research.
 
-```
+```markdown
 ## Topics for Research
 
 ### Section 1: [Topic Area]
-- Subsection a: [Specific topic]
-- Subsection b: [Specific topic]
-- Subsection c: [Specific topic]
+
+#### Subsection 1.a: [Specific topic]
+- **Description**: What this topic covers (1-2 sentences)
+- **Why it matters**: Relevance to the project
+- **Known constraints**: If the user specified immutables for this topic
+- **Initial References**: URLs and sources discovered during Phase 0 research
+  - [Source Title](URL) — Brief note on what this source covers
+  - [Source Title](URL) — Brief note on what this source covers
+
+#### Subsection 1.b: [Specific topic]
+- **Description**: ...
+- **Why it matters**: ...
+- **Known constraints**: ...
+- **Initial References**: ...
 
 ### Section 2: [Topic Area]
-- Subsection a: [Specific topic]
-- Subsection b: [Specific topic]
-
 ...
 ```
 
-For each topic, include:
-- **Brief description** — What this topic covers (1-2 sentences)
-- **Why it matters** — Relevance to the project
-- **Known constraints** — If the user specified immutables for this topic
+**Important**: Every web search result that looks relevant should be saved as a reference under the appropriate topic. These URLs are the starting point for Phase 1 — the next agent won't need to rediscover them.
 
 ### Step 5: Save Output
 
-Write the structured topic list to `research/phase-0-targets/topics.md`.
+Write the structured topic list (with references) to `research/phase-0-targets/topics.md`.
 
 ### Step 6: Checkpoint
 
@@ -117,16 +122,19 @@ Look for:
 - Technology surveys
 - Recent feature changes in newest/latest versions
 
+**Save every useful URL found** — attach it to the topic it relates to. Even if you don't read the full page, the URL is valuable for Phase 1.
+
 ---
 
 ## Critical Rules
 
 - **Ask the user early, research second** — don't dive into web research without understanding the project goals first
 - **Iterate, don't monologue** — research, report findings, ask clarifying questions, repeat
-- **Don't over-research in Phase 0** — the goal is to DISCOVER topics, not research them deeply. That happens in Phases 1-2
+- **Don't over-research in Phase 0** — the goal is to DISCOVER topics and GATHER INITIAL REFERENCES, not research them deeply. That happens in Phases 1-2
+- **Save references with each topic** — URLs from web searches should be attached to the topic they relate to. These jumpstart Phase 1.
 - **Flag immutables as you find them** — if the user says "I must use Rust", note it immediately as a known constraint
 - **Keep the topic list manageable** — 8-15 major topics with 3-7 subsections each is usually sufficient to start
-- **Save progress incrementally** — if the conversation gets long, save the partial topic list to disk before continuing
+- **Save progress incrementally** — if the conversation gets long, save the partial topic list and references to disk before continuing
 
 ---
 
