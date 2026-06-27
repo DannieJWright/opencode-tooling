@@ -56,7 +56,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 5. **References mandatory** — include only valid references. Exclude any URLs that failed to fetch. Every factual claim should have a source.
 6. **Expand beyond existing docs** — Phase 1 overview and Phase 0 references are starting points, not the sole source. Supplement heavily with web research.
 7. **Deep implementation details** — unlike Phase 1, this phase digs into how things work, not just what exists. Cover architecture patterns, API surface area, configuration, trade-offs.
-8. **Output file format** — subagent must write to `research/phase-2-deep/<section>.<subsection>-<short-desc>.md`. File structure:
+8. **Output file format** — subagent must write to `research/phase-2-initial-research/<section>.<subsection>-<short-desc>.md`. File structure:
    - Subagent prompt at the top
    - Research findings (detailed, with subsections)
    - Valid references (URLs with brief notes, file references with line numbers)
@@ -79,7 +79,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
    - Phase 0 initial references for that topic
    - `TECH_STACK` context
    - All subagent rules
-   - Output file path (`research/phase-2-deep/<section>.<subsection>-<desc>.md`)
+   - Output file path (`research/phase-2-initial-research/<section>.<subsection>-<desc>.md`)
 5. Wait for completion, verify output file was written
 6. Mark subsection complete, proceed to next
 7. After finishing all subsections in a section, spawn a verification subagent to:

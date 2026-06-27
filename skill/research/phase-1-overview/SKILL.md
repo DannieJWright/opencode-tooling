@@ -72,7 +72,7 @@ Only spawn researcher subagents for the research. Apply these rules to **EVERY s
 4. Wait for completion, verify output file was written
 5. Mark topic complete, proceed to next
 6. After finishing all topics in a section, spawn a verification subagent to:
-   - a. Verify all current section output files were updated (using `git status`)
+   - a. Verify all current section output files were updated (using `git diff --stat`)
    - b. If any topics were missed, report which topic(s) were missed so they can be re-done
    - c. If all topics were updated, commit changes using conventional commits, report section complete with git line change count. No summary or change details.
 7. If the verification subagent found missed topics, restart at step 3 for each missed topic

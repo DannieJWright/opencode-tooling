@@ -1,160 +1,211 @@
 ---
 name: phase-4-decisions
-description: >
-  Generate and maintain the research decisions register for the 2D gladiator
-  fighting game project. Reads summary documents from docs/research/summaries/,
-  extracts all conflicting technical/design choices, catalogs mandatory requirements,
-  and writes a cumulative decisions document at docs/research/decisions.md with
-  tracked decision state, source references, and cross-decision dependency
-  analysis. Trigger: "generate decisions doc", "research decisions", "decisions
-  register", "decision matrix", "design decisions", "update decisions",
-  "catalog decisions from summaries".
+description: Analyze research summaries to classify decisions as Immutable, Derived, or Open. Produces raw decision documents with reasoning and references, then generates condensed state files for quick reference.
 ---
+
+# Phase 4: Decision Making
 
 ## Purpose
+Take the condensed research summaries from Phase 3 and classify every decision item into categories: **Immutable** (fixed by constraint), **Derived** (follows from immutables), or **Open** (needs a conscious choice). Produce raw decision documents with full reasoning and references, then generate condensed state files derived from that raw data.
 
-Produce a single cumulative decisions document cataloging every technical and design choice that must be resolved before implementing the 2D gladiator fighting game. This is the bridge between research summaries and actual implementation planning.
+**This is classification and documentation, not final decision-making.** The agent categorizes and documents; the user makes final choices on open items.
 
-## Workflow
-
-### Step 1 — Read Source Summaries
-
-Read ALL files under `docs/research/summaries/`. Process them in numerical order (01-summary.md through N-summary.md). Each summary covers a research chapter (architecture, combat, UI, AI, etc.).
-
-Track: decision categories, conflicting options per category, framework alternatives, design pattern choices, architecture trade-offs, and any "mandatory" recommendations with no viable alternatives.
-
-### Step 2 — Extract Decision Categories
-
-Group decisions by domain. Standard categories (expand as summaries dictate):
-
-- **Mandatory Requirements** — no viable alternatives, automatic constraints
-- **Architecture** — rendering pipeline, 3-layer model depth, event system, data flow
-- **Combat System** — FSM, command pattern, turn model, damage pipeline, status effects, buffs/debuffs
-- **Entity Design** — stats model, sprite rendering, hitbox patterns
-- **Scene Management** — bootstrap, scene loading, transitions
-- **UI** — runtime system, animations, data binding, layout
-- **Feedback Systems** — particles, audio, screen shake
-- **Arena Environment** — tilemap, lighting, per-arena config
-- **Progression & Balance** — XP curves, stat scaling, skill trees, difficulty
-- **Persistence** — serialization, storage, save architecture
-- **Tutorial & Onboarding** — tutorial approach, skip/replay
-- **AI** — decision architecture, phase management, difficulty scaling
-- **Input System** — workflow, architecture, action maps
-- **Production Readiness** — localization, CI/CD, build targets, sprite atlases
-
-### Step 3 — Write Document Structure
-
-Output file: `docs/research/decisions.md`
-
-Follow this exact structure:
-
-```markdown
-# Research Decisions — 2D Gladiator Fighting Game (Unity 2026, C#)
-
-> Cumulative decision register derived from `docs/research/summaries/01-summary.md` through `docs/research/summaries/N-summary.md`.
-> Each item lists conflicting options from source documents, reasoning for preferred choice, and current decision state.
+## Activation
+- Triggered when `state/phase-marker.md` indicates Phase 4
+- User says "phase 4", "decisions", "classify decisions", or similar
+- Re-entered from Phase 6 when reality check requires re-evaluation
 
 ---
 
-## Table of Contents
+## Pre-flight
 
-- [Mandatory Requirements](#mandatory-requirements)
-- [Category headings alphabetically]
+**Before doing anything else, ask the user for these values.** Do not proceed until all are provided.
+
+| Variable | Description | Default |
+|---|---|---|
+| `PROJECT_DESCRIPTION` | What is the project? (e.g. "2D turn-based gladiator fighting game") | N/A |
+| `TECH_STACK` | What tech stack? (e.g. "Unity game engine using C#") | N/A |
 
 ---
 
-## Mandatory Requirements
+## Input
 
-### Requirements with no viable alternatives — automatic constraints for this project.
+1. **Read `research/phase-0-targets/topics.md`** — Get the section/subsection structure
+2. **Read Phase 3 summary files from `research/phase-3-summaries/`** — These are the condensed research sources
+3. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+4. **If re-entering from Phase 6**: Read `state/loop-history.md` and any updated Phase 4 decision files
 
-- [x] **Requirement Title** — description. *(source-file(s))*
-```
+---
 
-### Step 4 — Write Decision Items
+## Process
 
-Each decision follows this format:
+### Step 1: Extract Decision Items
+
+Read each Phase 3 summary and extract every decision item — technical choices, architecture patterns, framework options, design trade-offs.
+
+### Step 2: Classify Each Decision
+
+For each extracted item, classify into one category:
+
+**IMMUTABLE** — Fixed by external constraints, user requirement, or platform mandate. Cannot change.
+- Examples: "Must use Unity" → "Must use C#", regulatory requirements, existing infrastructure
+- Include reasoning: WHY is it immutable?
+
+**DERIVED** — Logically follows from an immutable choice. Not a free decision.
+- Examples: If Unity is immutable → .NET ecosystem is derived → NuGet for packages is derived
+- Include the immutable item that derives it
+
+**OPEN** — Multiple valid options exist, needs conscious choice.
+- Examples: Which state management library? Which testing framework? Which architecture pattern?
+- List the known options from research
+
+### Step 3: Write Raw Decision Documents
+
+For each decision item, write a raw decision file to `research/phase-4-decisions/<section>.<subsection>-<desc>.md`. Each file includes:
+
+- Decision description
+- Classification (Immutable / Derived / Open)
+- Options and alternatives (from research)
+- Reasoning for classification
+- Source references (Phase 3 summary file + URL references)
+- User notes or preferences (if provided)
+
+### Step 4: Generate State Files
+
+After all raw decision files are written, generate derived state files:
+
+**`state/decision-matrix.md`** — Condensed table:
+| # | Decision Item | Section | Status | Options | Source Ref |
+|---|--------------|---------|--------|---------|------------|
+
+**`state/constraint-chains.md`** — Traced implications showing how immutables cascade into derived items.
+
+### Step 5: Report to User
+
+Present a summary of classification results:
+- Count of Immutable, Derived, and Open items
+- List of Open decisions that need user input
+- Any items where research was insufficient for classification
+
+---
+
+## Subagent Rules
+
+Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent prompts):
+
+1. **Classify, do not decide** — the agent classifies items and documents reasoning. The user makes final choices on Open items.
+2. **Sequential execution** — spawn one subagent at a time. Never parallel.
+3. **Single section scope** — each subagent handles ONE section's decisions.
+4. **Read Phase 3 summaries** — subagent reads the Phase 3 summary for its assigned section.
+5. **Output raw decision files** — write to `research/phase-4-decisions/<section>.<subsection>-<desc>.md`.
+6. **Write before return** — subagent must write files BEFORE returning.
+7. **Merge into existing** — if decision files exist from a prior run, update them with new classifications. Preserve any user-made decisions.
+8. **References mandatory** — include source references to Phase 3 summaries and URL references.
+9. **Tech stack context** — include the `(TECH_STACK)` to keep decisions focused.
+10. Return to the primary agent only the number of git line changes for the subagent output file, nothing else.
+
+---
+
+## Execution Order
+
+1. Read Phase 3 summaries for all sections
+2. Start with Section 1
+3. Spawn **one** subagent with:
+   - The file path for the Phase 3 summary for that section 
+   - `TECH_STACK` context
+   - Classification rules (Immutable / Derived / Open)
+   - All subagent rules
+   - Output file path(s) for that section's decision files
+4. Wait for completion, verify decision files were written
+5. Mark section complete, proceed to next
+6. After all sections, generate state files:
+   - `state/decision-matrix.md` (condensed table from raw decision files)
+   - `state/constraint-chains.md` (traced implications)
+7. Commit using conventional commits
+8. Report classification summary to user
+
+---
+
+## Raw Decision File Format
 
 ```markdown
-### Prefix-NN: Decision Name
+# Decision: [Decision Name]
 
-**Options:**
+## Classification
+**Status:** IMMUTABLE | DERIVED | OPEN
+
+## Options
 - **Option A** — description and trade-offs
 - **Option B** — description and trade-offs
 
-**Sources:** `XX-summary` (specific section), `YY-summary` (related section)
+## Reasoning
+[Why this classification. For Immutable: what mandates it. For Derived: what it derives from. For Open: what criteria should guide the choice.]
 
-> **Preferred:** The recommended option. Reasoning: why this choice wins over alternatives, what trade-offs are accepted.
+## Sources
+- Phase 3 summary: `01-ai-systems.md` (specific section)
+- URL: https://... (brief note)
 
-**Decision:** UNDECIDED
+## User Notes
+[Any user-provided preferences or constraints for this decision]
 ```
-
-- Use unique prefix per category: `Arch-`, `Comb-`, `Ent-`, `Scn-`, `UI-`, `Fb-`, `Aren-`, `Prog-`, `Per-`, `Tut-`, `AI-`, `In-`, `Prod-`
-- Use `-` horizontal rule between decision items
-- Number sequentially within each category (01, 02, ...)
-- **UNDECIDED** is the default state for every item — decisions are made later by the user
-
-### Step 5 — Cross-Decision Dependencies
-
-After all categories, add a dependency matrix:
-
-```markdown
-## Cross-Decision Dependencies
-
-> Items below list decisions that affect multiple categories. Resolving one item constrains or influences others.
-
-| Decision | Affects | Notes |
-|----------|---------|-------|
-```
-
-Identify items where a choice in one category constrains options in another. Example: Arch-03 (Event System) affects all combat communication and UI data flow.
-
-### Step 6 — Decisions List Summary
-
-Append a summary table at bottom:
-
-```markdown
-## Decisions List Summary
-
-| ID | Category | Decision | Status |
-|----|----------|----------|--------|
-| *(Mandatory ×N)* | Requirements | *(See Mandatory Requirements section above)* | ✅ Fixed |
-| Arch-01 | Architecture | ... | ⬜ UNDECIDED |
-...
-
-**Total: N mandatory requirements + N decisions = N tracked items.**
 
 ---
 
-*Last updated: YYYY-MM-DD*
-*Source documents: 01-summary.md through N-summary.md*
+## State File Generation
+
+### `state/decision-matrix.md`
+```markdown
+# Decision Matrix
+
+| # | Decision | Section | Status | Options | Source Ref |
+|---|----------|---------|--------|---------|------------|
+| 1 | Language | 01 | 🔒 Immutable | Rust | User requirement |
+| 2 | Database | 01 | ✅ Resolved | PostgreSQL | Decision #1 cascade |
+| 3 | Auth | 02 | ❓ Open | JWT / Session | 02-ui-summary.md |
 ```
 
-### Step 7 — Verification
+### `state/constraint-chains.md`
+```markdown
+# Constraint Chains
 
-After writing, verify:
-1. Every decision item has a `**Decision:** UNDECIDED` line
-2. Every decision item references at least one source summary file in `**Sources:**`
-3. Summary table counts match actual items in document
-4. No decision item has more than 2 blank lines between sections
-5. Mandatory requirements use `- [x]` checkboxes; undecided items use no checkbox
+## Chain 1: Language Choice (Rust - Immutable)
+→ Async runtime needed (tokio / async-std)
+→ Crate ecosystem for packages
+→ Serialization: serde
 
-## Grounding Rules
+## Chain 2: Database (PostgreSQL - Derived)
+→ ORM: must support PostgreSQL
+→ Migration tool: must work with PostgreSQL
+→ Caching: consider PostgreSQL built-in caching
+```
 
-- **Always** read current summaries before generating. The skill does not memorize decisions.
-- **Always** reference source files. Every decision must cite which summary(s) introduced the options.
-- **Prefer** options consistent across summaries. When summaries agree, state as preferred.
-- **Flag** genuine disagreements between summaries explicitly.
-- **Do not** make decisions. Set all to UNDECIDED. Provide recommendations with reasoning, but the decision register is advisory.
-- **Check** for existing `decisions.md`. If it exists, do NOT blindly overwrite. Compare structure, preserve any user-made decisions, only update/add new items from summaries that differ.
-- **Mandatory requirements** are items explicitly stated as mandatory/automatic by the research (e.g., "SOs are immutable", "ECS/DOTS: not used"). These are locked, not undecided.
+---
 
-## Update Mode
+## Post-Phase
 
-When re-running (summaries changed):
+After all decisions are classified and documented:
+1. Trigger the checkpoint skill to save current Phase 4 status
+2. Update checkpoint summary with decision status
+3. Present Open decisions to user for resolution
+4. Prepare to transition to Phase 5 (deep dive on chosen stack)
 
-1. Read existing `decisions.md`
-2. Read all summaries
-3. Diff decision IDs — identify new items, removed items, changed options
-4. Preserve existing decision states (UNDECIDED or user-set values)
-5. Only update recommendation text and source references
-6. Add new category sections only if summaries introduce genuinely new topics
+---
+
+## Re-entry from Phase 6
+
+When Phase 6 reality check requires re-evaluation:
+1. Read `state/loop-history.md` for context on why we're re-entering
+2. Read updated Phase 4 raw decision files (Phase 6 may have modified them)
+3. Regenerate state files from updated raw data
+4. Continue classification for any new or changed items
+
+---
+
+## Critical Rules
+
+- **NEVER spawn subagents in parallel**
+- **Classify, do not decide** — document options and reasoning, let user choose
+- **Raw data stays detailed** — decision files include full reasoning and references
+- **State files are derived and condensed** — generated from raw decision files, not manually edited
+- **Checkpoint on completion** — save state before transitioning phases
+- **Re-entry is explicit** — when coming from Phase 6, read loop history first

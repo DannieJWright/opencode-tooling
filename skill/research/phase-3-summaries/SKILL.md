@@ -1,172 +1,159 @@
 ---
 name: phase-3-summaries
-description: >
-  Use when planning a project by researching multiple topics via sequential subagents.
-  Triggers: "lets make the phase 2 summary docs", "research phase 2"
+description: Condense all Phase 2 subsection research files into one summary document per section. Preserves source references for traceability while reducing context window load for decision-making.
 ---
 
-# Research Orchestration
+# Phase 3: Summary Condensation
 
-Orchestrate subagent researchers that sequentially study topics from a guide document, producing a single checklist-based plan file for a fresh agent session to implement step-by-step.
+## Purpose
+Take the granular research files produced in Phase 2 (one per subsection) and condense ALL subsections within a section into a SINGLE summary file per section. This reduces context window load for Phase 4 decision-making while preserving traceability through source references.
 
-## Overview
+**This is NOT research.** This is summarization and condensation of existing Phase 2 research.
 
-You are an orchestrator. You read a guide document listing research topics, spawn one subagent per subpoint, and collect their findings into a plan document. Each subpoint becomes a checked-off section in the plan with implementation details, references, and key findings.
+## Activation
+- Triggered when `state/phase-marker.md` indicates Phase 3
+- User says "phase 3", "summarize research", or similar
 
-## Configuration
+---
 
-Set these before starting:
+## Pre-flight
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `GUIDE_DOC` | Path to the guide document | `docs/research/guide.md` |
-| `PLAN_FILE` | Path to the output plan | `docs/implementation-plan.md` |
-| `TECH_STACK` | Project context to narrow research | `Unity C# 2D game` |
+**Before doing anything else, ask the user for these values.** Do not proceed until all are provided.
 
-## Guide Document Format
+| Variable | Description | Default |
+|---|---|---|
+| `PROJECT_DESCRIPTION` | What is the project? (e.g. "2D turn-based gladiator fighting game") | N/A |
+| `TECH_STACK` | What tech stack? (e.g. "Unity game engine using C#") | N/A |
 
-The guide document should have numbered sections, each with subsections and references:
+---
 
-```markdown
-## Section N: Topic Title
+## Mission
 
-### N.a Subtopic
-- Local references: `file.md`, `file.md#L10-L20`
-- Associated URLs: https://example.com
+Condense Phase 2 deep research into per-section summaries for a `(PROJECT_DESCRIPTION)`. Each section's multiple subsection files become one condensed document that captures the important findings while preserving source traceability.
 
-### N.b Another Subtopic
-- Local references: ...
-```
+You are the orchestrator. Spawn one subagent per section to handle the condensation.
+
+**This is condensation only.** Do not research new information. Do not have subagents do web searches.
+
+---
+
+## Input
+
+1. **Read `research/phase-0-targets/topics.md`** — Get the list of sections and their subsections
+2. **Read Phase 2 deep research files from `research/phase-2-initial-research/`** — These are the source files to condense
+3. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+
+---
 
 ## Subagent Rules
 
-Include these rules in every subagent prompt:
+Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent prompts):
 
-1. **Research only** — no implementation, no code, no plans. Collect information.
-2. **Single topic scope** — research only the assigned subpoint. Tight scope.
-3. **Sequential web research** — fetch one URL at a time. Never parallel. URLs from known valid sources only.
-4. **No decisions** — when multiple options exist, mention each. Note whether native to the platform. Note which is most recent (legacy vs new systems). Do not pick a winner.
-5. **References only** — include only valid references. Exclude any URLs that failed to fetch.
-6. **Expand beyond local docs** — guide document references are a starting point, not the sole source. Supplement with web research.
-7. **Report structure** — return findings in the exact format specified in the prompt. No fluff.
+1. **Condense, do not research** — no new web searches, no new information. Summarize what's already in Phase 2 files.
+2. **Single section scope** — each subagent handles ONE section and ALL its subsections.
+3. **Read all subsection files for the assigned section** — read every `research/phase-2-initial-research/<section>.*.md` file for that section.
+4. **Output file format** — subagent must write to `research/phase-3-summaries/<section>-<topic>.md`. File structure:
+   - Section title with brief description
+   - Condensed findings per subsection (boiled down to key points, not full detail)
+   - Source references linking back to Phase 2 files (with subsection identifiers)
+   - Valid URL references from Phase 2 research (preserved, not duplicated)
+   - Key options and alternatives identified (without deciding between them)
+5. **Write before return** — subagent must write its summary file BEFORE returning.
+6. **Preserve traceability** — every condensed finding must reference which Phase 2 subsection file it came from.
+7. **Condense aggressively** — the goal is to reduce context window load. Cut verbose explanations, keep key facts, options, and references.
+8. **No decisions** — do not make choices between options. Present options as Phase 2 identified them.
+9. **Merge into existing** — if the summary file exists from a prior run, merge findings in seamlessly.
+10. **Tech stack context** — include the `(TECH_STACK)` to keep summaries focused.
+11. Return to the primary agent only the number of git line changes for the subagent output file, nothing else.
 
-## Plan File Format
+---
 
-The orchestrator maintains a single plan file. Structure:
+## Execution Order
 
-```markdown
-# [Project Name] Implementation Plan
-
-> Plan generated through research orchestration. Each section was researched independently.
-> This plan is ready for a fresh agent session to execute step-by-step.
-
-## Section 1: [Topic]
-
-- [ ] 1.a [Subpoint name]
-- [ ] 1.b [Subpoint name]
-
-**Key Findings:**
-[Research findings from subagents]
-
-**References:**
-[Valid references]
-
-## Section 2: [Topic]
-
-- [ ] 2.a [Subpoint name]
-...
-```
-
-As each subagent completes, the orchestrator:
-1. Replaces `- [ ]` with `- [x]` for that subpoint
-2. Appends the subagent's findings and references to that section
-3. Rewrites the full plan file atomically
-
-## Workflow
-
-```dot
-digraph workflow {
-    rankdir=LR;
-    A["Read GUIDE_DOC"] -> B["Get next subpoint"];
-    B -> C{"Subpoints left?"};
-    C ->|"yes"| D["Spawn subagent (sequential)"];
-    D -> E["Update PLAN_FILE with results"];
-    E -> F{"Section complete?"};
-    F ->|"yes"| G["STOP — report progress"];
-    G -> H["Wait for confirmation"];
-    H -> B;
-    F ->|"no"| B;
-    C ->|"no"| I["Plan complete"];
-}
-```
-
-### Execution Steps
-
-1. Read `GUIDE_DOC`
-2. Initialize `PLAN_FILE` with full checklist (all `- [ ]`)
-3. Get next unchecked subpoint
-4. Spawn **one** subagent with:
-   - The subpoint topic
-   - References from `GUIDE_DOC` for that section
+1. Read `research/phase-0-targets/topics.md` for the section/subsection structure
+2. Start with Section 1
+3. Spawn **one** subagent with:
+   - The section topic
+   - List of all subsection file paths to read (`research/phase-2-initial-research/<section>.*.md`)
    - `TECH_STACK` context
    - All subagent rules
-   - Explicit output format request
-5. Wait for completion
-6. Update `PLAN_FILE`: mark subpoint `- [x]`, append findings and references
-7. If all subpoints in a section done — **STOP and report progress**. Do not continue without confirmation.
-8. On confirmation, proceed to next section
+   - Output file path (`research/phase-3-summaries/<section>-<topic>.md`)
+4. Wait for completion, verify output file was written
+5. Mark section complete, proceed to next
+6. After finishing all sections, spawn a verification subagent to:
+   - a. Verify all section summary files were written (check `research/phase-3-summaries/` with `git diff --stat`)
+   - b. If any sections were missed, report which so they can be re-done
+   - c. If all updated, commit using conventional commits and report complete with line change count
+7. If verification found missed sections, restart at step 3 for each missed section
+8. Upon confirmation all sections were completed, proceed to post-phase
+
+---
 
 ## Subagent Prompt Template
 
 ```
-You are a research agent for a [TECH_STACK] project.
+You are a condensation agent for a [TECH_STACK] project.
 
-Topic: [subpoint description]
+Section: [section description]
 
-Research references:
-[local file references from guide.md for this section]
-[associated URLs from guide.md for this section]
+Source files to read (Phase 2 deep research):
+- research/phase-2-initial-research/01.a-enemy-pathing.md
+- research/phase-2-initial-research/01.b-enemy-steering.md
+- [etc., list all subsection files for this section]
+
+Output file: research/phase-3-summaries/01-ai-systems.md
 
 Rules:
-- Research only — no implementation, no code, no plans
-- One web fetch at a time — no parallel web requests
-- No decisions — mention options, don't pick
-- Include only valid references (exclude failed URLs)
-- Guide references are a starting point — supplement with web research
+- Condense only — no new research, no web searches
+- Read all source files, then condense into one summary
+- Preserve source references (file paths + URL links)
+- Cut verbose explanations, keep key facts, options, and alternatives
+- Do not make decisions between options
+- Write to the output file before returning
+- If file exists, merge findings seamlessly
 
-Return your findings in this exact format:
+Write your summary in this format:
 
-### Key Findings
-[What this component needs, what systems exist, architecture notes]
+# Section [N]: [Topic Title]
 
-### Technical Considerations
-[Platform-native options, legacy vs current APIs, trade-offs]
+## Overview
+[Brief 2-3 sentence description of what this section covers]
 
-### References
-[Valid file references with line numbers, valid URLs only]
+## Key Findings by Subsection
+
+### [Subsection Name] (Source: 01.a-enemy-pathing.md)
+[Condensed key findings — bullet points, not paragraphs]
+- Key fact or option
+- Another key finding
+- [Reference: URL](link) — brief note
+
+### [Next Subsection] (Source: 01.b-enemy-steering.md)
+[Condensed key findings]
+- ...
+
+## Options Identified
+[Options and alternatives found in research, without deciding between them]
+
+## Preserved References
+[URLs and file references from Phase 2 research, organized by topic]
 ```
 
-## Plan File Header
+---
 
-When initializing the plan file, include:
+## Post-Phase
 
-```markdown
-# [TECH_STACK] Implementation Plan
+After all section summaries are produced:
+1. Trigger the checkpoint skill to save Phase 3 status (which section was summarized and what section is next to summarize).
+2. Update checkpoint summary with research status
+3. If all sections have finished being summarized, then prepare to transition to Phase 4 (decision-making using condensed summaries)
 
-> Plan generated through research orchestration on [date].
-> Each section was researched independently. This plan is ready for a fresh agent session to execute step-by-step.
-> Check off each item as it is implemented.
-```
+---
 
-## Checkpoints
+## Critical Rules
 
-After completing all subpoints in a section, stop and report:
-- Which subpoints completed
-- Current state of the plan file
-- Any issues encountered
-
-Do not proceed to the next section without user confirmation.
-
-## Handoff
-
-When all sections complete, the plan file is ready for handoff. A fresh agent reads the plan and implements each checked section in order, checking off `- [x]` items as done.
+- **NEVER spawn subagents in parallel**
+- **Condensation only — no new research**
+- **Every section gets its own subagent and one summary file**
+- **Source traceability is mandatory** — every finding must reference its Phase 2 source
+- **Preserve URL references** — keep all valid URLs from Phase 2 for future validation
+- **Checkpoint on completion** — save state before transitioning phases and inbetween section summaries.
