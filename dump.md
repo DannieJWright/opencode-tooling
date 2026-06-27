@@ -441,9 +441,9 @@ Work through these subpoints sequentially. Each gets its own subagent.
 3. Wait for completion, verify output file was written
 4. Mark subpoint complete, proceed to next
 5. After finishing all subpoints in a section, spawn a new subagent to:
-    a. Verify all the current section's output files were updated (using git stats). 
+    a. Verify all the current section's output files were updated (using `git diff --stat`). 
     b. If any subsections were missed, return to the primary agent which subsection(s) were missed so they can be re-done.
-    c. If all subsections were updated, commit the changes using conventional commits, then return to the primary agent that the section is complete and the number of file lines that were changed via git stats. Do not return anything else (no summary, change details, etc).
+    c. If all subsections were updated, commit the changes using conventional commits, then return to the primary agent that the section is complete and the number of file lines that were changed via `git diff --stat`. Do not return anything else (no summary, change details, etc).
 6. If the reviewer subagent found any subsections were not updated, restart at step 2 for each of the missed subsections.
 7. Upon confirmation all subsections for the current section were completed, continue to next section
 8. Repeat through all 13 sections

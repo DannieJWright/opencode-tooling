@@ -40,8 +40,9 @@ You are the orchestrator. Spawn one subagent per section to handle the condensat
 ## Input
 
 1. **Read `research/phase-0-targets/topics.md`** — Get the list of sections and their subsections
-2. **Read Phase 2 deep research files from `research/phase-2-initial-research/`** — These are the source files to condense
-3. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+2. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+
+**CRITICAL: The orchestrator must NOT read the Phase 2 deep research files itself.** Pass the file paths to sub-agents so they read and condense the research independently. This preserves the orchestrator's context window.
 
 ---
 
@@ -74,14 +75,14 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 2. Start with Section 1
 3. Spawn **one** subagent with:
    - The section topic
-   - List of all subsection file paths to read (`research/phase-2-initial-research/<section>.*.md`)
+   - List of all subsection **file paths** to read (`research/phase-2-initial-research/<section>.*.md`)
    - `TECH_STACK` context
    - All subagent rules
    - Output file path (`research/phase-3-summaries/<section>-<topic>.md`)
 4. Wait for completion, verify output file was written
 5. Mark section complete, proceed to next
 6. After finishing all sections, spawn a verification subagent to:
-   - a. Verify all section summary files were written (check `research/phase-3-summaries/` with `git diff --stat`)
+   - a. Verify all section summary files were written (check `research/phase-3-summaries/`)
    - b. If any sections were missed, report which so they can be re-done
    - c. If all updated, commit using conventional commits and report complete with line change count
 7. If verification found missed sections, restart at step 3 for each missed section
@@ -99,7 +100,7 @@ Section: [section description]
 Source files to read (Phase 2 deep research):
 - research/phase-2-initial-research/01.a-enemy-pathing.md
 - research/phase-2-initial-research/01.b-enemy-steering.md
-- [etc., list all subsection files for this section]
+- [etc., list all subsection file paths for this section]
 
 Output file: research/phase-3-summaries/01-ai-systems.md
 
@@ -112,7 +113,7 @@ Rules:
 - Write to the output file before returning
 - If file exists, merge findings seamlessly
 
-Write your summary in this format:
+Return your summary in this format:
 
 # Section [N]: [Topic Title]
 
@@ -143,9 +144,9 @@ Write your summary in this format:
 ## Post-Phase
 
 After all section summaries are produced:
-1. Trigger the checkpoint skill to save Phase 3 status (which section was summarized and what section is next to summarize).
+1. Trigger the checkpoint skill to save Phase 3 completion
 2. Update checkpoint summary with research status
-3. If all sections have finished being summarized, then prepare to transition to Phase 4 (decision-making using condensed summaries)
+3. Prepare to transition to Phase 4 (decision-making using condensed summaries)
 
 ---
 
@@ -156,4 +157,5 @@ After all section summaries are produced:
 - **Every section gets its own subagent and one summary file**
 - **Source traceability is mandatory** — every finding must reference its Phase 2 source
 - **Preserve URL references** — keep all valid URLs from Phase 2 for future validation
-- **Checkpoint on completion** — save state before transitioning phases and inbetween section summaries.
+- **Checkpoint on completion** — save state before transitioning phases
+- **Context protection** — The orchestrator MUST NOT read Phase 2 deep research files. Pass file paths to sub-agents instead.

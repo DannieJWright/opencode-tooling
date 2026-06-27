@@ -31,20 +31,19 @@ Take the condensed research summaries from Phase 3 and classify every decision i
 ## Input
 
 1. **Read `research/phase-0-targets/topics.md`** — Get the section/subsection structure
-2. **Read Phase 3 summary files from `research/phase-3-summaries/`** — These are the condensed research sources
-3. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
-4. **If re-entering from Phase 6**: Read `state/loop-history.md` and any updated Phase 4 decision files
+2. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+3. **If re-entering from Phase 6**: Read `state/loop-history.md` and any updated Phase 4 decision files
+
+**CRITICAL: The orchestrator must NOT read the Phase 3 summary files itself.** Reading them consumes the orchestrator's context window. Instead, pass the file paths to each sub-agent so the sub-agents read and process the summaries independently.
 
 ---
 
 ## Process
 
 ### Step 1: Extract Decision Items
-
-Read each Phase 3 summary and extract every decision item — technical choices, architecture patterns, framework options, design trade-offs.
+Sub-agents will read the Phase 3 summaries and extract every decision item — technical choices, architecture patterns, framework options, design trade-offs.
 
 ### Step 2: Classify Each Decision
-
 For each extracted item, classify into one category:
 
 **IMMUTABLE** — Fixed by external constraints, user requirement, or platform mandate. Cannot change.
@@ -60,8 +59,7 @@ For each extracted item, classify into one category:
 - List the known options from research
 
 ### Step 3: Write Raw Decision Documents
-
-For each decision item, write a raw decision file to `research/phase-4-decisions/<section>.<subsection>-<desc>.md`. Each file includes:
+For each decision item, sub-agents write raw decision files to `research/phase-4-decisions/<section>.<subsection>-<desc>.md`. Each file includes:
 
 - Decision description
 - Classification (Immutable / Derived / Open)
@@ -71,7 +69,6 @@ For each decision item, write a raw decision file to `research/phase-4-decisions
 - User notes or preferences (if provided)
 
 ### Step 4: Generate State Files
-
 After all raw decision files are written, generate derived state files:
 
 **`state/decision-matrix.md`** — Condensed table:
@@ -81,7 +78,6 @@ After all raw decision files are written, generate derived state files:
 **`state/constraint-chains.md`** — Traced implications showing how immutables cascade into derived items.
 
 ### Step 5: Report to User
-
 Present a summary of classification results:
 - Count of Immutable, Derived, and Open items
 - List of Open decisions that need user input
@@ -96,7 +92,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 1. **Classify, do not decide** — the agent classifies items and documents reasoning. The user makes final choices on Open items.
 2. **Sequential execution** — spawn one subagent at a time. Never parallel.
 3. **Single section scope** — each subagent handles ONE section's decisions.
-4. **Read Phase 3 summaries** — subagent reads the Phase 3 summary for its assigned section.
+4. **Read Phase 3 summaries** — subagent MUST read the Phase 3 summary for its assigned section.
 5. **Output raw decision files** — write to `research/phase-4-decisions/<section>.<subsection>-<desc>.md`.
 6. **Write before return** — subagent must write files BEFORE returning.
 7. **Merge into existing** — if decision files exist from a prior run, update them with new classifications. Preserve any user-made decisions.
@@ -108,10 +104,10 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 
 ## Execution Order
 
-1. Read Phase 3 summaries for all sections
+1. Read `research/phase-0-targets/topics.md` for the section/subsection structure
 2. Start with Section 1
 3. Spawn **one** subagent with:
-   - The file path for the Phase 3 summary for that section 
+   - The Phase 3 summary **file path** for that section (`research/phase-3-summaries/<section>-<topic>.md`)
    - `TECH_STACK` context
    - Classification rules (Immutable / Derived / Open)
    - All subagent rules
@@ -184,7 +180,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 ## Post-Phase
 
 After all decisions are classified and documented:
-1. Trigger the checkpoint skill to save current Phase 4 status
+1. Trigger the checkpoint skill to save Phase 4 completion
 2. Update checkpoint summary with decision status
 3. Present Open decisions to user for resolution
 4. Prepare to transition to Phase 5 (deep dive on chosen stack)
@@ -209,3 +205,4 @@ When Phase 6 reality check requires re-evaluation:
 - **State files are derived and condensed** — generated from raw decision files, not manually edited
 - **Checkpoint on completion** — save state before transitioning phases
 - **Re-entry is explicit** — when coming from Phase 6, read loop history first
+- **Context protection** — The orchestrator MUST NOT read Phase 3 summary files. Pass file paths to sub-agents instead.

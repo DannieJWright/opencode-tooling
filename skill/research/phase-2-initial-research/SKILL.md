@@ -31,7 +31,7 @@ Conduct deep, focused research for each subsection identified in Phase 0 and Pha
 
 Research each subsection deeply for a `(PROJECT_DESCRIPTION)` using `(TECH_STACK)` as context. Produce one granular research file per subsection.
 
-You are the orchestrator. Read the topic list from `research/phase-0-targets/topics.md` and the overview files from `research/phase-1-overview/` — **do not research yourself**. Delegate all deep research to subagents.
+You are the orchestrator. Read the topic list from `research/phase-0-targets/topics.md` and pass file paths to sub-agents — **do not research yourself**. Delegate all deep research to subagents.
 
 **This is research only.** Do not implement code. Do not have subagents implement anything.
 
@@ -40,8 +40,9 @@ You are the orchestrator. Read the topic list from `research/phase-0-targets/top
 ## Input
 
 1. **Read `research/phase-0-targets/topics.md`** — Get the list of sections, subsections, and initial references
-2. **Read Phase 1 overview files from `research/phase-1-overview/`** — Get broad context per topic
-3. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+2. **Read `state/checkpoint.md`** — Get condensed context from checkpoint
+
+**CRITICAL: The orchestrator must NOT read the Phase 1 overview files itself.** Pass the file paths to sub-agents so they read the overviews independently. This preserves the orchestrator's context window.
 
 ---
 
@@ -71,24 +72,23 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 ## Execution Order
 
 1. Read `research/phase-0-targets/topics.md` for the subsection list
-2. Read Phase 1 overview files for context
-3. Start with Section 1, subsection a
-4. Spawn **one** subagent with:
+2. Start with Section 1, subsection a
+3. Spawn **one** subagent with:
    - The subsection topic
-   - Phase 1 overview context for that topic
+   - The Phase 1 overview **file path** for that topic (`research/phase-1-overview/<topic>.md`)
    - Phase 0 initial references for that topic
    - `TECH_STACK` context
    - All subagent rules
    - Output file path (`research/phase-2-initial-research/<section>.<subsection>-<desc>.md`)
-5. Wait for completion, verify output file was written
-6. Mark subsection complete, proceed to next
-7. After finishing all subsections in a section, spawn a verification subagent to:
-   - a. Verify all current section output files were updated (using git stats)
+4. Wait for completion, verify output file was written
+5. Mark subsection complete, proceed to next
+6. After finishing all subsections in a section, spawn a verification subagent to:
+   - a. Verify all current section output files were updated (using `git diff --stat`)
    - b. If any subsections were missed, report which so they can be re-done
    - c. If all updated, commit using conventional commits and report section complete with line change count
-8. If verification found missed subsections, restart at step 4 for each missed subsection
-9. Upon confirmation all subsections for the current section were completed, continue to next section
-10. Repeat through all sections
+7. If verification found missed subsections, restart at step 3 for each missed subsection
+8. Upon confirmation all subsections for the current section were completed, continue to next section
+9. Repeat through all sections
 
 ---
 
@@ -100,8 +100,8 @@ You are a research agent for a [TECH_STACK] project.
 Topic: [subsection description]
 Output file: research/phase-2-initial-research/<section>.<subsection>-<desc>.md
 
-Context from Phase 1 overview:
-[Paste relevant Phase 1 findings for this topic]
+Context file to read (Phase 1 overview):
+- research/phase-1-overview/<topic>.md
 
 Initial references from Phase 0:
 [URLs and sources discovered in Phase 0]
@@ -146,3 +146,4 @@ After all subsections are researched:
 - **Every subsection gets its own subagent and its own output file**
 - **References are mandatory** — every claim should have a source
 - **Checkpoint on completion** — save state before transitioning phases
+- **Context protection** — The orchestrator MUST NOT read Phase 1 overview files. Pass file paths to sub-agents instead.

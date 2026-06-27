@@ -31,7 +31,7 @@ Conduct broad research across all topics established in Phase 0. This phase gath
 
 Research a `(PROJECT_DESCRIPTION)` using `(TECH_STACK)` as context. Establish broad overview knowledge for each topic established in Phase 0 through subagent researchers.
 
-You are the orchestrator. Read the topic list from `research/phase-0-targets/topics.md` — **do not research any other files or look up information yourself**. Delegate all research work to subagents. Aggressively rely on subagents and have them summarize information back to you.
+You are the orchestrator. Read the topic list from `research/phase-0-targets/topics.md` — **do not research any other files or look up information yourself**. Delegate all research work to subagents.
 
 **This is research only.** Do not implement code. Do not have subagents implement anything. Collect information and produce well-organized documentation for reuse during development.
 
