@@ -18,12 +18,7 @@ Conduct broad research across all topics established in Phase 0. This phase gath
 
 ## Pre-flight
 
-**Before doing anything else, ask the user for these values.** Do not proceed until all are provided.
-
-| Variable | Description | Default |
-|---|---|---|
-| `PROJECT_DESCRIPTION` | What is the project? (e.g. "2D turn-based gladiator fighting game") | N/A |
-| `TECH_STACK` | What tech stack? (e.g. "Unity game engine using C#") | N/A |
+**Before doing anything else, read `state/checkpoint.md`** to retrieve `PROJECT_DESCRIPTION` and `TECH_STACK`. These values are already persisted from Phase 0. Only ask the user directly if the checkpoint file is missing or lacks this information.
 
 ---
 
