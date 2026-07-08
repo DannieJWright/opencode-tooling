@@ -6,13 +6,12 @@ description: Manage persistent state across sessions to survive compaction. Hand
 # Checkpoint Skill
 
 ## Purpose
-Manage persistent state across sessions to survive compaction. This skill handles loading state on session start and saving state on phase transitions or user request. **Cross-cutting** — loads with every other skill.
+Manage persistent state across sessions to survive compaction. This skill handles loading state on session start and saving state on phase transitions or user request. **Cross-cutting** — loads with every other research skill.
 
 ## Activation
 - **On session start**: Automatically load checkpoint state
 - **On phase transition**: Save full checkpoint
 - **On user request**: User says "checkpoint", "save state", or similar
-- **On Phase 6 updates**: Regenerate derived state files from updated Phase 4 raw data
 
 ---
 
@@ -85,6 +84,5 @@ state/
 
 - **Always save before concluding work** — never leave state files stale
 - **Derived state files are regenerated from raw data** — decision-matrix and constraint-chains are always derived from `research/phase-4-decisions/` files, never manually edited
-- **Keep checkpoint.md concise** — it's a quick context restore, not a full summary. Target 200-300 words
+- **Keep checkpoint.md concise** — it's a quick context restore, not a full summary. Target 1000-2000 words
 - **If context is filling up**: Save checkpoint and suggest session swap
-- **Phase 6 loop**: When Phase 6 updates Phase 4 raw decision files, regenerate ALL derived state (decision-matrix + constraint-chains) from the updated input

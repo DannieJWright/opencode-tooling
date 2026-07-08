@@ -19,7 +19,7 @@ Take the condensed research summaries from Phase 3 and classify every decision i
 
 ## Pre-flight
 
-**Before doing anything else, read `state/checkpoint.md`** to retrieve `PROJECT_DESCRIPTION` and `TECH_STACK`. These values are already persisted from earlier phases. Only ask the user directly if the checkpoint file is missing or lacks this information.
+**Before doing anything else, read `state/checkpoint.md`** to retrieve `(PROJECT_DESCRIPTION)` and `(TECH_STACK)`. These values are already persisted from earlier phases. Only ask the user directly if the checkpoint file is missing or lacks this information.
 
 ---
 
@@ -103,7 +103,7 @@ Apply these rules to **EVERY subagent** you spawn (be explicit in the subagent p
 2. Start with Section 1
 3. Spawn **one** subagent with:
    - The Phase 3 summary **file path** for that section (`research/phase-3-summaries/<section>-<topic>.md`)
-   - `TECH_STACK` context
+   - `(TECH_STACK)` context
    - Classification rules (Immutable / Derived / Open)
    - All subagent rules
    - Output file path(s) for that section's decision files
