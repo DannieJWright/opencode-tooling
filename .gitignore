@@ -3,3 +3,5 @@
 lancedb/*
 models/*
 compactions/*
+runs/*
+data/*
