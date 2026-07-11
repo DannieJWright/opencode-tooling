@@ -642,3 +642,41 @@ Key structural rules the AI agent follows:
 6. Decision state explicit — UNDECIDED/LOCKED/DEFERRED, not implied
 7. Summary table at bottom — machine-parseable status register
 8. Dependency matrix — shows which decisions couple together
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+This looks good in general, but brings up a need to change our flows in general.
+
+For starters, we need some additional dedicated skills and changes to other skills to ensure consistent transitions and data flow through each phase.
+
+### A dedicated decision/constraint update skill
+The Phase 4 skill 'c:/Users/Danni/Documents/Git/opencode-tooling/skill/research/phase-4-decisions/SKILL.md' defines how to update the decision-matrix and constraint-chains files, as well as the original orchestration for the first time we enter phase 4. We should pull out the logic for generating the decision-matrix.md and constraint-chains.md files into a dedicated skill so the information can be updated by phase 6. The new dedicated decision/constraint generation skill will need to be referenced in 
+ - the updated phase 4 skill (replacing the phase 4 skill's inline description of the file generation)
+ - phase 6 when conflicts are found and the decisions need to be updated as a result
+ - the checkpoint skill should no longer reference the phase 6 requirement to regenerate the files, since that will already be covered in the phase 6 skill definition.
+
+
+
+### Phase 6 should not be modifying phase 4 raw files
+Phase 6 should not be modifying the raw phase 4 files. Instead phase 6 should use the new decision/constraints generation skill to update the decision/constrains files. Then, like you mentioned, we need to determine if the changes will require more research or not.
