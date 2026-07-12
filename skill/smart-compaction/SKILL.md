@@ -1,5 +1,5 @@
 ---
-name: compaction
+name: smart-compaction
 description: Compress the current conversation into a compact, structured summary optimized for pasting into a new session to continue seamlessly. Captures original goals, progress, decisions, pending work, and next steps. Saves to a timestamped file with a short session description. Before compacting, updates the knowledge graph memory with any new facts from the conversation. Trigger when the user requests compaction or context summarization for session continuity.
 ---
 
