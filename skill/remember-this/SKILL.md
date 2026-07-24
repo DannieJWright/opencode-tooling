@@ -5,7 +5,7 @@ description: Save conversation findings to the RAG database at ai-vault for know
 
 ## Purpose
 
-The user is asking you to add or update markdown files related to the topics we were discussing to our RAG data base at "C:\Users\Danni\Documents\Git\ai-vault". Your goal is to 
+The user is asking you to add or update markdown files related to the topics we were discussing to a RAG data base. Your goal is to 
 - Establish what information the user wants you to save from your conversation. Determine which topics are to be saved, ask if it is ambiguous.
 - Establish where within the RAG vault your summary file should be located based on the directory/filepath naming scheme which is based on the topics being requested to be saved.
 - Save a detailed summary of the requested topics/findings, all associated references brought up during the conversation, all URL links, and all relevant context from any associated research.
@@ -16,9 +16,7 @@ Expect this command was used after a user asks a question or series of questions
 
 **This is a strict path requirement.** All research documents must be saved in a topic file under the appropriate meta-topic subfolders:
 
-```
-`C:\Users\Danni\Documents\Git\ai-vault\<meta-topic>\<meta-subtopic>\<topic>.md`
-```
+First, determine the RAG vault path by calling `local-rag_list_files` and reading `baseDirs[0]` from the response. All documents must be saved under this base directory. Under the base directory they should be saved in directories organized by topic: `<vault-base-dir>/<meta-topic>/<meta-subtopic>/<topic>.md`.
 
 Where `<meta-topic>`, `<meta-subtopic>` and `<topic>` are kebab-case folder/filenames describing the research subject. For example:
 - `opencode/core/opencode-life-cycle.md` for research regarding the functionality of the lifecycle for the OpenCode tool
