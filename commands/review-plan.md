@@ -4,4 +4,4 @@ agent: orchestrator
 subtask: false
 ---
 
-Run the review-plan skill against the specified plan/spec files.
+Run the `review-plan` skill against the specified plan/spec files.
