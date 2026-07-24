@@ -4,4 +4,4 @@ agent: orchestrator
 subtask: false
 ---
 
-Run the independent-review skill against the specified topic.
+Run the `sanity-fix` skill against the specified topic.
