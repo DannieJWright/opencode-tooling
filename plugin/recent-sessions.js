@@ -19,6 +19,9 @@ export const RecentSessions = async ({ client }) => {
 						return `Failed to list sessions: ${err.message || err}`
 					}
 
+					// Guard against null/undefined/non-array responses
+					if (!Array.isArray(sessions)) return "No sessions available."
+
 					// Filter out sub-sessions and sort by last activity
 					const rootSessions = sessions
 						.filter(s => !s.parentID)
@@ -48,8 +51,7 @@ export const RecentSessions = async ({ client }) => {
 	}
 }
 
-function formatRelativeTime(msTimestamp) {
-	const now = Date.now()
+export function formatRelativeTime(msTimestamp, now = Date.now()) {
 	const diffSeconds = Math.floor((now - msTimestamp) / 1000)
 
 	if (diffSeconds < 60) return "just now"
@@ -60,6 +62,6 @@ function formatRelativeTime(msTimestamp) {
 	return `${Math.floor(diffSeconds / 2592000)} month${Math.floor(diffSeconds / 2592000) !== 1 ? "s" : ""} ago`
 }
 
-function getResumeCmd(sessionId) {
+export function getResumeCmd(sessionId) {
 	return `opencode -s ${sessionId}`
 }
