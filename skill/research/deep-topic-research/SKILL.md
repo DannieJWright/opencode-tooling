@@ -77,6 +77,7 @@ This is the core advantage of the sequential approach. Each later session should
 
 The final synthesis is **not** a summary of each session. It is a **coherent answer to the original question** that:
 
+- Write all output using **ASD-STE100 Simplified Technical English** — short sentences, active voice, one idea per sentence, controlled vocabulary. See the [ASD-STE100 standard](https://www.asd-ste100.com) for the complete word list and rules.
 - Resolves contradictions between sessions (e.g. "session A says X but session B found the opposite — the real answer is Y because of Z")
 - Ranks findings by importance or confidence
 - Presents a ranked numbered summary with quantitative evidence
