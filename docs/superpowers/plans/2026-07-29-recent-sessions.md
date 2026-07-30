@@ -56,7 +56,7 @@ Create `plugin/recent-sessions.js` with the following structure:
 ```js
 import { tool } from "@opencode-ai/plugin"
 
-export const RecentSessions = async ({ client }) => {
+export default async ({ client }) => {
 	return {
 		tool: {
 			recent_sessions: tool({
@@ -75,10 +75,14 @@ export const RecentSessions = async ({ client }) => {
 						return `Failed to list sessions: ${err.message || err}`
 					}
 
+					if (!Array.isArray(sessions)) {
+						return "Failed to list sessions: unexpected response type"
+					}
+
 					// Filter out sub-sessions and sort by last activity
 					const rootSessions = sessions
 						.filter(s => !s.parentID)
-						.sort((a, b) => (b.time?.updated || b.time?.created || 0) - (a.time?.updated || a.time?.created || 0))
+						.sort((a, b) => (b.time.updated || b.time.created || 0) - (a.time.updated || a.time.created || 0))
 
 					const recent = rootSessions.slice(0, limit)
 
@@ -87,7 +91,7 @@ export const RecentSessions = async ({ client }) => {
 					}
 
 					const rows = recent.map((s, i) => {
-						const time = s.time?.updated || s.time?.created || 0
+						const time = s.time.updated || s.time.created || 0
 						const relativeTime = formatRelativeTime(time)
 						const isoTime = new Date(time).toISOString()
 						const dir = s.directory || "(no directory)"
@@ -113,7 +117,8 @@ function formatRelativeTime(msTimestamp) {
 	if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} hour${Math.floor(diffSeconds / 3600) !== 1 ? "s" : ""} ago`
 	if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)} day${Math.floor(diffSeconds / 86400) !== 1 ? "s" : ""} ago`
 	if (diffSeconds < 2592000) return `${Math.floor(diffSeconds / 604800)} week${Math.floor(diffSeconds / 604800) !== 1 ? "s" : ""} ago`
-	return `${Math.floor(diffSeconds / 2592000)} month${Math.floor(diffSeconds / 2592000) !== 1 ? "s" : ""} ago`
+	if (diffSeconds < 31536000) return `${Math.floor(diffSeconds / 2592000)} month${Math.floor(diffSeconds / 2592000) !== 1 ? "s" : ""} ago`
+	return `${Math.floor(diffSeconds / 31536000)} year${Math.floor(diffSeconds / 31536000) !== 1 ? "s" : ""} ago`
 }
 
 function getResumeCmd(sessionId) {
@@ -146,6 +151,7 @@ Create `commands/recent-sessions.md`:
 ---
 description: "List recent OpenCode sessions across all working directories to help resume work"
 agent: default
+subtask: false
 ---
 
 Call the `recent_sessions` tool and display the result to the user.
