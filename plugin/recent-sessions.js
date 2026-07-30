@@ -37,8 +37,9 @@ export const RecentSessions = async ({ client }) => {
 						const time = s.time?.updated || s.time?.created || 0
 						const relativeTime = formatRelativeTime(time)
 						const isoTime = new Date(time).toISOString()
-						const dir = s.directory || "(no directory)"
-						return `| ${i + 1} | ${s.title || "(untitled)"} | \`${dir}\` | ${relativeTime} | \`${isoTime}\` | \`${getResumeCmd(s.id)}\` |`
+						const title = (s.title || "(untitled)").replace(/\|/g, "\\|")
+						const dir = (s.directory || "(no directory)").replace(/\|/g, "\\|")
+						return `| ${i + 1} | ${title} | \`${dir}\` | ${relativeTime} | \`${isoTime}\` | \`${getResumeCmd(s.id)}\` |`
 					})
 
 					const header = `| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |`
@@ -52,7 +53,7 @@ export const RecentSessions = async ({ client }) => {
 }
 
 export function formatRelativeTime(msTimestamp, now = Date.now()) {
-	const diffSeconds = Math.floor((now - msTimestamp) / 1000)
+	const diffSeconds = Math.max(0, Math.floor((now - msTimestamp) / 1000))
 
 	if (diffSeconds < 60) return "just now"
 	if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} minute${Math.floor(diffSeconds / 60) !== 1 ? "s" : ""} ago`
