@@ -1,6 +1,5 @@
 ---
 description: "List recent OpenCode sessions across all working directories to help resume work"
-agent: default
 subtask: false
 ---
 
