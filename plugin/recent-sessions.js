@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin"
 
-export const RecentSessions = async ({ client }) => {
+export default async ({ client }) => {
 	return {
 		tool: {
 			recent_sessions: tool({
