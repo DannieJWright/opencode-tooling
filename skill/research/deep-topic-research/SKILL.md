@@ -67,7 +67,7 @@ Each session query must be **narrowly scoped** yet **richly detailed**. Demand q
 This is the core advantage of the sequential approach. Each later session should be shaped by what earlier sessions discovered:
 
 - **Narrow scope** based on what prior sessions revealed
-- **Pursue surprising findings** — if session 1 revealed an unexpected angle, investigate it deeper
+- **Pursue counterintuitive findings aggressively** — if session 1 revealed a surprising result, session 2 investigates it deeper with a dedicated angle. Counterintuitive findings are where the most valuable insights hide
 - **Resolve open questions** — if session 1 raised "but what about X?", session 2 answers it
 - **Escalate specificity** — foundation → implications → concrete tradeoffs
 - When referencing prior findings, include a **1-2 sentence distillation** of the relevant prior result — not the full log. Example: *"Session 1 found pattern A dominates in large teams. Now investigate whether A holds for small teams."*
@@ -75,15 +75,52 @@ This is the core advantage of the sequential approach. Each later session should
 
 ### 4. Synthesize into Unified Answer
 
-The final synthesis is **not** a summary of each session. It is a **coherent answer to the original question** that:
+The final synthesis is **not** a summary of each session. It is a **coherent answer to the original question** that follows this structure:
 
-- Write all output using **ASD-STE100 Simplified Technical English** — short sentences, active voice, one idea per sentence, controlled vocabulary. See the [ASD-STE100 standard](https://www.asd-ste100.com) for the complete word list and rules.
-- Resolves contradictions between sessions (e.g. "session A says X but session B found the opposite — the real answer is Y because of Z")
-- Ranks findings by importance or confidence
-- Presents a ranked numbered summary with quantitative evidence
-- Concludes with an actionable recommendation or practical takeaway
-- Credits sources where applicable
-- Acknowledges blind spots — dimensions where evidence was thin or contradictory and cannot be resolved
+**Structure (follow this order):**
+1. **The verdict** — 1-2 sentence direct answer upfront, no hedging
+2. **Key findings** — ranked numbered list, each with quantitative evidence from sessions (percentages, dollar amounts, benchmark scores)
+3. **Contradictions resolved** — if sessions said different things, explain which finding prevails and why (e.g. "session 2 says planning saves money, session 4 shows planning degrades quality — the real answer is review-then-fix")
+4. **Actionable recommendation** — concrete, practical takeaway with specific guidance
+
+**Style requirements:**
+- Write using **ASD-STE100 Simplified Technical English** — short sentences, active voice, one idea per sentence. See [ASD-STE100](https://www.asd-ste100.com) for rules.
+- Credit sources and benchmarks where applicable
+- Acknowledge blind spots — dimensions where evidence was thin or contradictory and cannot be resolved
+
+## Example Session Prompt
+
+**Cross-session context template** (embed this pattern in sessions 2+):
+
+```
+[Topic being investigated]. Prior sessions found:
+- Session 1: [1-2 sentence key finding]
+- Session 2: [1-2 sentence key finding] 
+
+Now investigate [specific new angle]. Pursue any counterintuitive finding from
+prior sessions aggressively. Focus on quantitative comparisons and real-world data.
+Skip opinion pieces. Provide specific benchmarks, percentages, dollar figures,
+and expert citations.
+```
+
+**Session 2 prompt example** (builds on session 1 finding that tiered routing is dominant):
+
+```
+Research the specific tradeoff between using frontier models for implementation
+planning vs direct code execution in software development. Session 1 found that
+tiered routing (frontier plans, cheap executes) dominates architectures.
+
+Investigate:
+1. Does spending more tokens on frontier-model planning actually produce better
+   outcomes than frontier models implementing directly?
+2. What's the thinking budget optimization — how much thinking should a frontier
+   model do before delegating?
+3. Are there concrete ROI comparisons showing cost per feature or cost per line?
+4. Does research show frontier models write better plans than mid-tier models?
+
+Focus on quantitative comparisons and real-world data. Skip opinion pieces.
+Provide specific benchmarks, percentages, dollar figures, and expert citations.
+```
 
 ## Example Decomposition
 
@@ -107,3 +144,4 @@ The final synthesis is **not** a summary of each session. It is a **coherent ans
 | Synthesis = list of summaries | No integration, no insight | Resolve contradictions, give recommendation |
 | Over-decomposed (>5 sessions) | Diminishing returns, context overhead | Consolidate related dimensions |
 | Session queries lack evidence demands | Opinions without substantiation | Request benchmarks, numbers, comparisons |
+| Skips counterintuitive findings | Misses highest-value insights | Dedicate next session to investigate surprising results |
