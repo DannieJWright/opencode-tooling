@@ -280,6 +280,34 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Alpha Session"), "Alpha should be omitted when count=1")
 	})
 
+	await okAsync("DB read: count above max clamps to 50 rows", async () => {
+		const sixtySessions = Array.from({ length: 60 }, (_, i) => ({
+			id: "ses_" + i,
+			title: "Session " + i,
+			directory: "C:\\proj\\x",
+			time_created: 1700000000000 + i * 1000,
+			time_updated: 1700000000000 + i * 1000,
+			parent_id: null,
+			time_archived: null,
+		}))
+		const dbPath = createSeedDb(sixtySessions)
+		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+		const output = await result.tool.recent_sessions.execute({ count: 100 }, {})
+
+		assert.ok(output.includes("| 50 |"), "Row 50 should be present (max clamp boundary)")
+		assert.ok(!output.includes("| 51 |"), "Row 51 should NOT be present (count clamped to 50)")
+	})
+
+	await okAsync("DB read: count below min clamps to 1 row", async () => {
+		const dbPath = createSeedDb([dbSessionA, dbSessionB])
+		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+		const output = await result.tool.recent_sessions.execute({ count: 0 }, {})
+
+		assert.ok(output.includes("| 1 | Beta Session |"), "Most recent session (Beta) should be present")
+		assert.ok(!output.includes("| 2 |"), "No second row when count=0 (clamped to 1)")
+		assert.ok(!output.includes("Alpha Session"), "Alpha should be omitted when count=0")
+	})
+
 	await okAsync("DB read: empty table returns 'No recent sessions found.'", async () => {
 		const dbPath = createSeedDb([])
 		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
