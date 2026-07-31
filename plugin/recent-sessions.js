@@ -1,11 +1,8 @@
 import { tool } from "@opencode-ai/plugin"
-import { Database } from "bun:sqlite"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
-const SESSION_COLUMNS = ["id", "title", "directory", "time_created", "time_updated", "parent_id", "time_archived"]
-
-// --- Database path resolution ---
+// --- Database path resolution (kept for backward compatibility / testing) ---
 
 async function runDbPathCommand() {
 	const text = await Bun.$`opencode db path`.text()
@@ -31,9 +28,11 @@ export async function resolveDbPath({ exec = runDbPathCommand, home = homedir() 
 	}
 }
 
-// --- Session read helpers ---
+// --- Session read helpers (SQLite direct access — kept for backward compat / testing) ---
 
-function checkSchema(db) {
+const SESSION_COLUMNS = ["id", "title", "directory", "time_created", "time_updated", "parent_id", "time_archived"]
+
+export function checkSchema(db) {
 	const row = db
 		.query(
 			"SELECT COUNT(*) AS c FROM pragma_table_info('session') WHERE name IN ('id','title','directory','time_created','time_updated','parent_id','time_archived')"
@@ -42,9 +41,7 @@ function checkSchema(db) {
 	return row.c === SESSION_COLUMNS.length
 }
 
-function querySessions(db, limit, includeArchived) {
-	// includeArchived is a boolean tool arg — the filter string is built from a
-	// constant boolean, never from user input, so there is no injection risk.
+export function querySessions(db, limit, includeArchived) {
 	const archivedFilter = includeArchived ? "" : "AND time_archived IS NULL"
 	return db
 		.query(
@@ -56,7 +53,7 @@ function querySessions(db, limit, includeArchived) {
 		.all(limit)
 }
 
-function readSessions(dbPath, DatabaseImpl, limit, includeArchived) {
+export function readSessions(dbPath, DatabaseImpl, limit, includeArchived) {
 	let db
 	try {
 		db = new DatabaseImpl(dbPath, { readonly: true })
@@ -69,6 +66,24 @@ function readSessions(dbPath, DatabaseImpl, limit, includeArchived) {
 		return { rows: querySessions(db, limit, includeArchived) }
 	} finally {
 		db.close()
+	}
+}
+
+// --- Experimental API session fetch ---
+
+async function fetchGlobalSessions(client, serverUrl, limit, includeArchived) {
+	try {
+		const url = new URL("/experimental/session", serverUrl)
+		url.searchParams.set("limit", String(Math.min(limit, 100)))
+		url.searchParams.set("archived", String(includeArchived))
+
+		const response = await fetch(url.toString())
+		const data = await response.json()
+		const sessions = Array.isArray(data) ? data : data?.data ?? []
+		if (!Array.isArray(sessions) || sessions.length === 0) return null
+		return sessions
+	} catch {
+		return null
 	}
 }
 
@@ -118,7 +133,7 @@ function withNote(note, table) {
 
 // --- Tool ---
 
-export default async ({ client }, { dbPathResolver = resolveDbPath, DatabaseImpl = Database } = {}) => {
+export default async ({ client, serverUrl }, { experimentalFetch = (limit, includeArchived) => fetchGlobalSessions(client, serverUrl, limit, includeArchived) } = {}) => {
 	return {
 		tool: {
 			recent_sessions: tool({
@@ -131,45 +146,27 @@ export default async ({ client }, { dbPathResolver = resolveDbPath, DatabaseImpl
 					const { count = 10, includeArchived = false } = args
 					const limit = Math.min(Math.max(1, count), 50)
 
-					let dbPath = null
+					// Primary: fetch from the experimental session endpoint (global sessions, no project filter)
+					let apiError = false
 					try {
-						dbPath = await dbPathResolver()
+						const sessions = await experimentalFetch(limit, includeArchived)
+						if (sessions && sessions.length > 0) {
+							const table = formatTable(sessions, limit)
+							return table ?? "No recent sessions found."
+						}
+						// Empty result (not an error) — no sessions exist
+						return "No recent sessions found."
 					} catch {
-						dbPath = null
+						apiError = true
 					}
 
-					if (dbPath) {
-						let outcome
-						for (let attempt = 0; attempt < 2; attempt++) {
-							try {
-								outcome = readSessions(dbPath, DatabaseImpl, limit, includeArchived)
-								if (outcome.error) break
-								return formatTable(outcome.rows, limit) ?? "No recent sessions found."
-							} catch (err) {
-								outcome = { error: "read", reason: err.message || String(err) }
-							}
-						}
-						if (outcome.error === "missing") {
-							return withNote(
-								`No OpenCode database found at ${outcome.path}. Run opencode once to initialize.`,
-								await listProjectScoped(client, limit)
-							)
-						}
-						if (outcome.error === "schema") {
-							return withNote(
-								"OpenCode database schema incompatible. Showing project-scoped sessions instead.",
-								await listProjectScoped(client, limit)
-							)
-						}
-						if (outcome.error === "read") {
-							return withNote(
-								`Failed to read session database: ${outcome.reason}. Showing project-scoped sessions instead.`,
-								await listProjectScoped(client, limit)
-							)
-						}
+					if (apiError) {
+						// Fallback: project-scoped sessions
+						return withNote(
+							"Could not fetch global sessions. Showing project-scoped sessions instead.",
+							await listProjectScoped(client, limit)
+						)
 					}
-
-					return withNote("No OpenCode database path resolved. Run opencode once to initialize.", await listProjectScoped(client, limit))
 				},
 			}),
 		},

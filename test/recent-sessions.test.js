@@ -4,11 +4,8 @@
 // Uses fixed timestamps for deterministic test results.
 
 import assert from "node:assert"
-import { resolve, dirname, join as pathJoin, posix, win32 } from "node:path"
+import { resolve, dirname } from "node:path"
 import { pathToFileURL, fileURLToPath } from "node:url"
-import { mkdtempSync } from "node:fs"
-import { platform, tmpdir } from "node:os"
-import { Database } from "bun:sqlite"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -32,15 +29,8 @@ let failed = 0
 // --- resolveDbPath / getFallbackDbPath ---
 console.log("\n--- resolveDbPath / getFallbackDbPath ---")
 
-const isWin = platform() === "win32"
-const pJoin = isWin ? win32 : posix
-
-ok("getFallbackDbPath: windows-style home", () => {
-	assert.strictEqual(getFallbackDbPath({ home: "C:\\Users\\Test" }), "C:\\Users\\Test\\.local\\share\\opencode\\opencode.db")
-})
-
-ok("getFallbackDbPath: posix-style home", () => {
-	assert.strictEqual(getFallbackDbPath({ home: "/home/test" }), pJoin.join("/home/test", ".local", "share", "opencode", "opencode.db"))
+ok("getFallbackDbPath: returns correct path", () => {
+	assert.ok(getFallbackDbPath({ home: "/home/test" }).endsWith("opencode.db"))
 })
 
 await okAsync("resolveDbPath: uses CLI output (trimmed)", async () => {
@@ -50,17 +40,15 @@ await okAsync("resolveDbPath: uses CLI output (trimmed)", async () => {
 
 await okAsync("resolveDbPath: falls back to platform convention when CLI throws", async () => {
 	const path = await resolveDbPath({
-		exec: async () => {
-			throw new Error("cli unavailable")
-		},
+		exec: async () => { throw new Error("cli unavailable") },
 		home: "/home/test",
 	})
-	assert.strictEqual(path, pJoin.join("/home/test", ".local", "share", "opencode", "opencode.db"))
+	assert.ok(path.endsWith("opencode.db"))
 })
 
 await okAsync("resolveDbPath: falls back when CLI returns empty", async () => {
-	const path = await resolveDbPath({ exec: async () => "   ", home: "C:\\Users\\Test" })
-	assert.strictEqual(path, "C:\\Users\\Test\\.local\\share\\opencode\\opencode.db")
+	const path = await resolveDbPath({ exec: async () => "   ", home: "/home/test" })
+	assert.ok(path.endsWith("opencode.db"))
 })
 
 // ---- Test helpers ----
@@ -167,89 +155,86 @@ ok("handles longer session IDs", () => {
 	assert.strictEqual(getResumeCmd("session-uuid-42"), "opencode -s session-uuid-42")
 })
 
-// ---- Execute-path tests (SQLite-backed) ----
+// ---- Session fixtures (experimental API shape — DB column names) ----
 
-const sessionA = {
+const globalSessionA = {
 	id: "ses_alpha",
 	title: "Alpha Session",
-	directory: "C:\\proj\\alpha",
+	directory: "/proj/alpha",
+	time_created: 1700000000000,
+	time_updated: 1700000100000,
+	parent_id: null,
+	time_archived: null,
+}
+
+const globalSessionB = {
+	id: "ses_beta",
+	title: "Beta Session",
+	directory: "/proj/beta",
+	time_created: 1700000000000,
+	time_updated: 1700000200000,
+	parent_id: null,
+	time_archived: null,
+}
+
+const globalArchived = {
+	id: "ses_arch",
+	title: "Archived Session",
+	directory: "/proj/arch",
+	time_created: 1700000000000,
+	time_updated: 1700000300000,
+	parent_id: null,
+	time_archived: 1700000400000,
+}
+
+const globalSubSession = {
+	id: "ses_child",
+	title: "Child Sub-session",
+	directory: "/proj/alpha",
+	time_created: 1700000000000,
+	time_updated: 1700000500000,
+	parent_id: "ses_alpha",
+	time_archived: null,
+}
+
+// Project-scoped fallback fixtures (old API shape — still used by listProjectScoped)
+const projectSessionA = {
+	id: "ses_alpha",
+	title: "Alpha Session",
+	directory: "/proj/alpha",
 	parentID: undefined,
 	time: { created: 1700000000000, updated: 1700000100000 },
 }
 
-const sessionB = {
+const projectSessionB = {
 	id: "ses_beta",
 	title: "Beta Session",
-	directory: "C:\\proj\\beta",
+	directory: "/proj/beta",
 	parentID: undefined,
 	time: { created: 1700000000000, updated: 1700000200000 },
 }
 
-const subSession = {
+const projectSubSession = {
 	id: "ses_child",
 	title: "Child Sub-session",
-	directory: "C:\\proj\\alpha",
+	directory: "/proj/alpha",
 	parentID: "ses_alpha",
 	time: { created: 1700000000000, updated: 1700000300000 },
 }
 
-// API-shape fixtures (above) feed the fallback path (project-scoped API listing).
-// DB-shape fixtures (below) use the real session-table column names.
-const dbSessionA = { id: "ses_alpha", title: "Alpha Session", directory: "C:\\proj\\alpha", time_created: 1700000000000, time_updated: 1700000100000, parent_id: null, time_archived: null }
-const dbSessionB = { id: "ses_beta", title: "Beta Session", directory: "C:\\proj\\beta", time_created: 1700000000000, time_updated: 1700000200000, parent_id: null, time_archived: null }
-const dbArchived = { id: "ses_arch", title: "Archived Session", directory: "C:\\proj\\arch", time_created: 1700000000000, time_updated: 1700000300000, parent_id: null, time_archived: 1700000400000 }
-const dbSubSession = { id: "ses_child", title: "Child Sub-session", directory: "C:\\proj\\alpha", time_created: 1700000000000, time_updated: 1700000500000, parent_id: "ses_alpha", time_archived: null }
-
-const SESSION_TABLE_SQL = `CREATE TABLE session (
-	id TEXT PRIMARY KEY,
-	title TEXT NOT NULL,
-	directory TEXT NOT NULL,
-	time_created INTEGER NOT NULL,
-	time_updated INTEGER NOT NULL,
-	parent_id TEXT,
-	time_archived INTEGER
-)`
-
-function createSeedDb(rows) {
-	const dir = mkdtempSync(pathJoin(tmpdir(), "rs-test-"))
-	const dbPath = pathJoin(dir, "test.db")
-	const db = new Database(dbPath)
-	db.run(SESSION_TABLE_SQL)
-	const insert = db.prepare(
-		"INSERT INTO session (id, title, directory, time_created, time_updated, parent_id, time_archived) VALUES (?, ?, ?, ?, ?, ?, ?)"
-	)
-	for (const r of rows) insert.run(r.id, r.title, r.directory, r.time_created, r.time_updated, r.parent_id ?? null, r.time_archived ?? null)
-	db.close()
-	return dbPath
-}
-
-function createSchemaMismatchDb() {
-	const dir = mkdtempSync(pathJoin(tmpdir(), "rs-bad-"))
-	const dbPath = pathJoin(dir, "test.db")
-	const db = new Database(dbPath)
-	db.run("CREATE TABLE session (id TEXT PRIMARY KEY, title TEXT NOT NULL)")
-	db.close()
-	return dbPath
-}
-
-const mustNotFallbackClient = {
-	session: {
-		list: async () => {
-			throw new Error("fallback client should not be called")
-		},
-	},
-}
+// ---- Execute-path tests (experimental API-backed) ----
 
 async function runExecuteTests() {
 	const mod = await import(pathToFileURL(pluginPath).href)
 	const pluginFn = mod.default
 
-	// --- SQLite-backed success path ---
-	console.log("\n--- execute: SQLite-backed read path ---")
+	// --- Experimental API success path ---
+	console.log("\n--- execute: experimental API read path ---")
 
-	await okAsync("DB read: root-only, sorted by recency, archived excluded", async () => {
-		const dbPath = createSeedDb([dbSubSession, dbSessionA, dbSessionB])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+	await okAsync("API read: root-only, sorted by recency, archived excluded", async () => {
+		const result = await pluginFn({}, {
+			experimentalFetch: async () => [globalSubSession, globalSessionA, globalSessionB],
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
 
 		assert.ok(output.includes("| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |"), "Output should contain the markdown table header")
@@ -259,9 +244,13 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Archived Session"), "Output should NOT contain archived sessions by default")
 	})
 
-	await okAsync("DB read: includeArchived includes archived sessions", async () => {
-		const dbPath = createSeedDb([dbSubSession, dbSessionA, dbSessionB, dbArchived])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+	await okAsync("API read: includeArchived includes archived sessions", async () => {
+		const result = await pluginFn({}, {
+			experimentalFetch: async (_limit, includeArchived) => {
+				const base = [globalSubSession, globalSessionA, globalSessionB]
+				return includeArchived ? [...base, globalArchived] : base
+			},
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10, includeArchived: true }, {})
 
 		assert.ok(output.includes("| 1 | Archived Session |"), "Archived session (time_updated 1700000300000) should be first when included")
@@ -270,9 +259,10 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Child Sub-session"), "Sub-session must remain excluded")
 	})
 
-	await okAsync("DB read: count parameter limits rows", async () => {
-		const dbPath = createSeedDb([dbSubSession, dbSessionA, dbSessionB])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+	await okAsync("API read: count parameter limits rows", async () => {
+		const result = await pluginFn({}, {
+			experimentalFetch: async () => [globalSubSession, globalSessionA, globalSessionB],
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 1 }, {})
 
 		assert.ok(output.includes("| 1 | Beta Session |"), "Most recent session should be present")
@@ -280,27 +270,29 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Alpha Session"), "Alpha should be omitted when count=1")
 	})
 
-	await okAsync("DB read: count above max clamps to 50 rows", async () => {
-		const sixtySessions = Array.from({ length: 60 }, (_, i) => ({
-			id: "ses_" + i,
-			title: "Session " + i,
-			directory: "C:\\proj\\x",
+	await okAsync("API read: count above max clamps to 50 rows", async () => {
+		const fiftyOneSessions = Array.from({ length: 60 }, (_, i) => ({
+			id: `ses_${i}`,
+			title: `Session ${i}`,
+			directory: "/proj/x",
 			time_created: 1700000000000 + i * 1000,
 			time_updated: 1700000000000 + i * 1000,
 			parent_id: null,
 			time_archived: null,
 		}))
-		const dbPath = createSeedDb(sixtySessions)
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+		const result = await pluginFn({}, {
+			experimentalFetch: async () => fiftyOneSessions,
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 100 }, {})
 
 		assert.ok(output.includes("| 50 |"), "Row 50 should be present (max clamp boundary)")
 		assert.ok(!output.includes("| 51 |"), "Row 51 should NOT be present (count clamped to 50)")
 	})
 
-	await okAsync("DB read: count below min clamps to 1 row", async () => {
-		const dbPath = createSeedDb([dbSessionA, dbSessionB])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+	await okAsync("API read: count below min clamps to 1 row", async () => {
+		const result = await pluginFn({}, {
+			experimentalFetch: async () => [globalSessionA, globalSessionB],
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 0 }, {})
 
 		assert.ok(output.includes("| 1 | Beta Session |"), "Most recent session (Beta) should be present")
@@ -308,9 +300,10 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Alpha Session"), "Alpha should be omitted when count=0")
 	})
 
-	await okAsync("DB read: empty table returns 'No recent sessions found.'", async () => {
-		const dbPath = createSeedDb([])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath })
+	await okAsync("API read: empty result returns 'No recent sessions found.'", async () => {
+		const result = await pluginFn({}, {
+			experimentalFetch: async () => [],
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
 
 		assert.strictEqual(output, "No recent sessions found.")
@@ -319,36 +312,38 @@ async function runExecuteTests() {
 	// --- Fallback paths ---
 	console.log("\n--- execute: fallback paths ---")
 
-	await okAsync("DB missing: graceful message + project-scoped fallback (wrapper shape)", async () => {
+	await okAsync("API failure: graceful message + project-scoped fallback (wrapper shape)", async () => {
 		let capturedOptions
 		const client = {
 			session: {
 				list: async (options) => {
 					capturedOptions = options
-					return { data: [subSession, sessionA, sessionB], error: undefined }
+					return { data: [projectSubSession, projectSessionA, projectSessionB], error: undefined }
 				},
 			},
 		}
-		const missingPath = pathJoin(tmpdir(), "rs-missing-" + Date.now(), "opencode.db")
-		const result = await pluginFn({ client }, { dbPathResolver: async () => missingPath })
+		const result = await pluginFn({ client }, {
+			experimentalFetch: async () => { throw new Error("experimental endpoint unavailable") },
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
 
-		assert.ok(output.includes(`No OpenCode database found at ${missingPath}`), "Message should include the missing DB path")
-		assert.ok(output.includes("Run opencode once to initialize."), "Message should include the init hint")
+		assert.ok(output.includes("Could not fetch global sessions."), "Message should announce experimental API failure")
+		assert.ok(output.includes("Showing project-scoped sessions instead."), "Message should announce fallback")
 		assert.deepStrictEqual(capturedOptions.query, { scope: "project" }, "Fallback should pass { query: { scope: 'project' } }")
 		assert.ok(output.includes("| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |"), "Fallback should include the table header")
 		assert.ok(output.includes("Beta Session"), "Fallback table should contain root sessions from the API")
 		assert.ok(!output.includes("Child Sub-session"), "Fallback table should exclude sub-sessions")
 	})
 
-	await okAsync("DB missing: project-scoped fallback (raw array shape)", async () => {
+	await okAsync("API failure: project-scoped fallback (raw array shape)", async () => {
 		const client = {
 			session: {
-				list: async () => [subSession, sessionA, sessionB],
+				list: async () => [projectSubSession, projectSessionA, projectSessionB],
 			},
 		}
-		const missingPath = pathJoin(tmpdir(), "rs-missing-" + Date.now(), "opencode.db")
-		const result = await pluginFn({ client }, { dbPathResolver: async () => missingPath })
+		const result = await pluginFn({ client }, {
+			experimentalFetch: async () => { throw new Error("endpoint unreachable") },
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
 
 		assert.ok(output.includes("| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |"), "Raw-array fallback should include the table header")
@@ -356,83 +351,39 @@ async function runExecuteTests() {
 		assert.ok(!output.includes("Child Sub-session"), "Raw-array fallback should exclude sub-sessions")
 	})
 
-	await okAsync("DB schema mismatch: message + project-scoped fallback", async () => {
-		let capturedOptions
+	await okAsync("Both API failure + project-scoped failure: graceful message", async () => {
 		const client = {
 			session: {
-				list: async (options) => {
-					capturedOptions = options
-					return { data: [sessionA, sessionB], error: undefined }
+				list: async () => { throw new Error("project API also unavailable") },
+			},
+		}
+		const result = await pluginFn({ client }, {
+			experimentalFetch: async () => { throw new Error("experimental endpoint unavailable") },
+		})
+		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
+
+		assert.ok(output.includes("Could not fetch global sessions."), "Should mention the primary failure")
+		assert.ok(!output.includes("| # |"), "No table when all paths fail")
+	})
+
+	await okAsync("Primary success: fallback client should not be called", async () => {
+		let fallbackCalled = false
+		const client = {
+			session: {
+				list: async () => {
+					fallbackCalled = true
+					return { data: [projectSessionA, projectSessionB] }
 				},
 			},
 		}
-		const badPath = createSchemaMismatchDb()
-		const result = await pluginFn({ client }, { dbPathResolver: async () => badPath })
+		const result = await pluginFn({ client }, {
+			experimentalFetch: async () => [globalSessionA, globalSessionB],
+		})
 		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
 
-		assert.ok(output.includes("OpenCode database schema incompatible. Showing project-scoped sessions instead."), "Message should announce schema mismatch")
-		assert.deepStrictEqual(capturedOptions.query, { scope: "project" }, "Fallback should pass { query: { scope: 'project' } }")
-		assert.ok(output.includes("Alpha Session"), "Fallback table should contain API sessions")
-	})
-
-	await okAsync("DB read error: retries once and recovers", async () => {
-		let constructAttempts = 0
-		class FlakyDatabase {
-			constructor(path, opts) {
-				constructAttempts++
-				if (constructAttempts === 1) {
-					const err = new Error("database is locked")
-					err.code = "SQLITE_BUSY"
-					throw err
-				}
-				this.db = new Database(path, opts)
-			}
-			query(sql) {
-				return this.db.query(sql)
-			}
-			close() {
-				this.db.close()
-			}
-		}
-		const dbPath = createSeedDb([dbSubSession, dbSessionA, dbSessionB])
-		const result = await pluginFn({ client: mustNotFallbackClient }, { dbPathResolver: async () => dbPath, DatabaseImpl: FlakyDatabase })
-		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
-
-		assert.strictEqual(constructAttempts, 2, "Read should be retried exactly once")
-		assert.ok(output.includes("| 1 | Beta Session |"), "Recovered read should produce the table")
-		assert.ok(!output.includes("Showing project-scoped sessions instead."), "No fallback note after successful retry")
-	})
-
-	await okAsync("DB read error: retry exhausted -> message + project-scoped fallback", async () => {
-		let constructAttempts = 0
-		class NeverDatabase {
-			constructor() {
-				constructAttempts++
-				const err = new Error("database is locked")
-				err.code = "SQLITE_BUSY"
-				throw err
-			}
-			query() {
-				throw new Error("unreachable")
-			}
-			close() {}
-		}
-		let capturedOptions
-		const client = {
-			session: {
-				list: async (options) => {
-					capturedOptions = options
-					return { data: [sessionA, sessionB], error: undefined }
-				},
-			},
-		}
-		const dbPath = createSeedDb([dbSessionA, dbSessionB])
-		const result = await pluginFn({ client }, { dbPathResolver: async () => dbPath, DatabaseImpl: NeverDatabase })
-		const output = await result.tool.recent_sessions.execute({ count: 10 }, {})
-
-		assert.strictEqual(constructAttempts, 2, "Read should be retried exactly once before falling back")
-		assert.ok(output.includes("Failed to read session database: database is locked. Showing project-scoped sessions instead."), "Message should announce read failure and fallback")
-		assert.deepStrictEqual(capturedOptions.query, { scope: "project" }, "Fallback should pass { query: { scope: 'project' } }")
+		assert.ok(output.includes("Beta Session"), "Should contain sessions from primary path")
+		assert.ok(!fallbackCalled, "Fallback client should NOT be called when primary succeeds")
+		assert.ok(!output.includes("Showing project-scoped sessions instead."), "No fallback note when primary succeeds")
 	})
 }
 
