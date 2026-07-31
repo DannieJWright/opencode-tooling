@@ -158,6 +158,31 @@ async function runExecuteTests() {
 	const mod = await import(pathToFileURL(pluginPath).href)
 	const pluginFn = mod.default
 
+	// --- Scope parameter verification ---
+	console.log("\n--- execute: scope parameter verification ---")
+
+	await okAsync("passes scope: project query parameter for cross-directory listing", async () => {
+		let capturedOptions
+		const mockClient = {
+			session: {
+				list: async (options) => {
+					capturedOptions = options
+					return { data: [sessionA], error: undefined }
+				},
+			},
+		}
+		const result = await pluginFn({ client: mockClient })
+		const def = result.tool.recent_sessions
+		await def.execute({ count: 10 }, {})
+
+		assert.ok(capturedOptions, "list() should receive an options object")
+		assert.deepStrictEqual(
+			capturedOptions.query,
+			{ scope: "project" },
+			"Should pass { query: { scope: 'project' } } for cross-directory session listing"
+		)
+	})
+
 	// --- Wrapper-shape client (SDK 1.18.10+ behavior) ---
 	console.log("\n--- execute: wrapper-shape client (SDK 1.18.10+) ---")
 

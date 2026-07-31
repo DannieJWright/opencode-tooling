@@ -11,15 +11,17 @@ export default async ({ client }) => {
 				async execute({ count = 10 }, _ctx) {
 					const limit = Math.min(Math.max(1, count), 50)
 
-					// Fetch all sessions (defensive unwrap: SDK 1.18.x returns { data, error, ... },
-					// older SDKs return a raw array — both shapes must work)
+					// Fetch all sessions (scope: "project" returns sessions across all directories.
+					// Without it, the call is directory-scoped.)
+					// Defensive unwrap: SDK 1.18.x returns { data, error, ... },
+					// older SDKs return a raw array — both shapes must work
 					let sessions
-					try {
-						const result = await client.session.list()
-						sessions = Array.isArray(result) ? result : result?.data
-					} catch (err) {
-						return `Failed to list sessions: ${err.message || err}`
-					}
+				try {
+					const result = await client.session.list({ query: { scope: "project" } })
+					sessions = Array.isArray(result) ? result : result?.data
+				} catch (err) {
+					return `Failed to list sessions: ${err.message || err}`
+				}
 
 					// Guard against null/undefined/non-array responses
 					if (!Array.isArray(sessions)) return "No sessions available."
