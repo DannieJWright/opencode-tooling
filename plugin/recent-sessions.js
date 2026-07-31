@@ -14,7 +14,7 @@ export default async ({ client }) => {
 					// Fetch all sessions
 					let sessions
 					try {
-						sessions = await client.session.list({ scope: "project" })
+						sessions = await client.session.list()
 					} catch (err) {
 						return `Failed to list sessions: ${err.message || err}`
 					}
