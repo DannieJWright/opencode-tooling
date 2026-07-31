@@ -11,10 +11,12 @@ export default async ({ client }) => {
 				async execute({ count = 10 }, _ctx) {
 					const limit = Math.min(Math.max(1, count), 50)
 
-					// Fetch all sessions
+					// Fetch all sessions (defensive unwrap: SDK 1.18.x returns { data, error, ... },
+					// older SDKs return a raw array — both shapes must work)
 					let sessions
 					try {
-						sessions = await client.session.list()
+						const result = await client.session.list()
+						sessions = Array.isArray(result) ? result : result?.data
 					} catch (err) {
 						return `Failed to list sessions: ${err.message || err}`
 					}

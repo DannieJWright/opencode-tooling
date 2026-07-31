@@ -1,4 +1,4 @@
-// Test: recent-sessions plugin - formatRelativeTime, getResumeCmd, exports
+// Test: recent-sessions plugin - formatRelativeTime, getResumeCmd, execute path
 //
 // Dynamically imports the real functions from the ESM plugin file.
 // Uses fixed timestamps for deterministic test results.
@@ -21,13 +21,24 @@ try {
 	process.exit(1)
 }
 
-// ---- Tests ----
+// ---- Test helpers ----
 let passed = 0
 let failed = 0
 
 function ok(label, fn) {
 	try {
 		fn()
+		passed++
+		console.log(`  ✓ ${label}`)
+	} catch (e) {
+		failed++
+		console.error(`  ✗ ${label}\n    ${e.message}`)
+	}
+}
+
+async function okAsync(label, asyncFn) {
+	try {
+		await asyncFn()
 		passed++
 		console.log(`  ✓ ${label}`)
 	} catch (e) {
@@ -117,6 +128,115 @@ ok("handles longer session IDs", () => {
 	assert.strictEqual(getResumeCmd("session-uuid-42"), "opencode -s session-uuid-42")
 })
 
-// --- Summary ---
+// ---- Execute-path tests (mocked client) ----
+
+const sessionA = {
+	id: "ses_alpha",
+	title: "Alpha Session",
+	directory: "C:\\proj\\alpha",
+	parentID: undefined,
+	time: { created: 1700000000000, updated: 1700000100000 },
+}
+
+const sessionB = {
+	id: "ses_beta",
+	title: "Beta Session",
+	directory: "C:\\proj\\beta",
+	parentID: undefined,
+	time: { created: 1700000000000, updated: 1700000200000 },
+}
+
+const subSession = {
+	id: "ses_child",
+	title: "Child Sub-session",
+	directory: "C:\\proj\\alpha",
+	parentID: "ses_alpha",
+	time: { created: 1700000000000, updated: 1700000300000 },
+}
+
+async function runExecuteTests() {
+	const mod = await import(pathToFileURL(pluginPath).href)
+	const pluginFn = mod.default
+
+	// --- Wrapper-shape client (SDK 1.18.10+ behavior) ---
+	console.log("\n--- execute: wrapper-shape client (SDK 1.18.10+) ---")
+
+	await okAsync("wrapper shape returns markdown table with root sessions", async () => {
+		const mockClient = {
+			session: {
+				list: async () => ({
+					data: [subSession, sessionA, sessionB],
+					error: undefined,
+					request: {},
+					response: {},
+				}),
+			},
+		}
+		const result = await pluginFn({ client: mockClient })
+		const def = result.tool.recent_sessions
+		const output = await def.execute({ count: 10 }, {})
+
+		assert.notStrictEqual(
+			output,
+			"No sessions available.",
+			"Should NOT return 'No sessions available.' for wrapper-shape response"
+		)
+		assert.ok(
+			output.includes("| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |"),
+			"Output should contain the markdown table header"
+		)
+		assert.ok(
+			output.includes("Alpha Session"),
+			"Output should contain 'Alpha Session'"
+		)
+		assert.ok(
+			output.includes("Beta Session"),
+			"Output should contain 'Beta Session'"
+		)
+		assert.ok(
+			!output.includes("Child Sub-session"),
+			"Output should NOT contain sub-session 'Child Sub-session'"
+		)
+	})
+
+	// --- Raw-array client (legacy SDK behavior) ---
+	console.log("\n--- execute: raw-array client (legacy SDK) ---")
+
+	await okAsync("raw-array returns markdown table with root sessions", async () => {
+		const mockClient = {
+			session: {
+				list: async () => [subSession, sessionA, sessionB],
+			},
+		}
+		const result = await pluginFn({ client: mockClient })
+		const def = result.tool.recent_sessions
+		const output = await def.execute({ count: 10 }, {})
+
+		assert.notStrictEqual(
+			output,
+			"No sessions available.",
+			"Should NOT return 'No sessions available.' for raw-array response"
+		)
+		assert.ok(
+			output.includes("| # | Title | Working Directory | Last Active | ISO Timestamp | Resume |"),
+			"Output should contain the markdown table header"
+		)
+		assert.ok(
+			output.includes("Alpha Session"),
+			"Output should contain 'Alpha Session'"
+		)
+		assert.ok(
+			output.includes("Beta Session"),
+			"Output should contain 'Beta Session'"
+		)
+		assert.ok(
+			!output.includes("Child Sub-session"),
+			"Output should NOT contain sub-session 'Child Sub-session'"
+		)
+	})
+}
+
+// --- Summary (after all tests including async) ---
+await runExecuteTests()
 console.log(`\n${passed} passed, ${failed} failed.\n`)
 process.exit(failed > 0 ? 1 : 0)
