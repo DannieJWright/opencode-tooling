@@ -169,7 +169,7 @@ export default async ({ client }, { dbPathResolver = resolveDbPath, DatabaseImpl
 						}
 					}
 
-					return withNote("No OpenCode database found. Run opencode once to initialize.", await listProjectScoped(client, limit))
+					return withNote("No OpenCode database path resolved. Run opencode once to initialize.", await listProjectScoped(client, limit))
 				},
 			}),
 		},
