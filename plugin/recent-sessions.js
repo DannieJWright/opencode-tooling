@@ -151,13 +151,16 @@ export default async ({ client, serverUrl }, { experimentalFetch = (limit, inclu
 					let apiError = false
 					try {
 						const sessions = await experimentalFetch(limit, includeArchived)
+						console.error("[recent-sessions] experimentalFetch returned:", typeof sessions, sessions === null ? "null" : (Array.isArray(sessions) ? "array(len=" + sessions.length + ")" : typeof sessions), JSON.stringify(sessions)?.slice(0, 200))
 						if (sessions && sessions.length > 0) {
 							const table = formatTable(sessions, limit)
+							console.error("[recent-sessions] formatTable returned:", table ? "table (" + table.split('\n').length + " lines)" : "null")
 							return table ?? "No recent sessions found."
 						}
 						// Empty result (not an error) — no sessions exist
 						return "No recent sessions found."
-					} catch {
+					} catch (e) {
+						console.error("[recent-sessions] experimentalFetch threw:", e?.message, e?.stack?.split('\n').slice(0, 3).join('\n'))
 						apiError = true
 					}
 
