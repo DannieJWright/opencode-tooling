@@ -1,4 +1,30 @@
 import { tool } from "@opencode-ai/plugin"
+import { homedir } from "node:os"
+import { join } from "node:path"
+
+async function runDbPathCommand() {
+	const text = await Bun.$`opencode db path`.text()
+	return String(text ?? "").trim()
+}
+
+export function getFallbackDbPath({ home = homedir() } = {}) {
+	return join(home, ".local", "share", "opencode", "opencode.db")
+}
+
+export async function resolveDbPath({ exec = runDbPathCommand, home = homedir() } = {}) {
+	try {
+		const raw = await exec()
+		const path = String(raw ?? "").trim()
+		if (path) return path
+	} catch {
+		// CLI unavailable — fall through to platform convention
+	}
+	try {
+		return getFallbackDbPath({ home })
+	} catch {
+		return null
+	}
+}
 
 export default async ({ client }) => {
 	return {

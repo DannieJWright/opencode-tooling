@@ -4,27 +4,64 @@
 // Uses fixed timestamps for deterministic test results.
 
 import assert from "node:assert"
-import { resolve, dirname } from "node:path"
+import { resolve, dirname, posix, win32 } from "node:path"
 import { pathToFileURL, fileURLToPath } from "node:url"
+import { platform } from "node:os"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // ---- Dynamic import of real plugin functions ----
 const pluginPath = resolve(__dirname, "..", "plugin", "recent-sessions.js")
-let formatRelativeTime, getResumeCmd
+let formatRelativeTime, getResumeCmd, resolveDbPath, getFallbackDbPath
 try {
 	const plugin = await import(pathToFileURL(pluginPath).href)
 	formatRelativeTime = plugin.formatRelativeTime
 	getResumeCmd = plugin.getResumeCmd
+	resolveDbPath = plugin.resolveDbPath
+	getFallbackDbPath = plugin.getFallbackDbPath
 } catch (e) {
 	console.error(`[FATAL] Could not import plugin: ${e.message}`)
 	process.exit(1)
 }
 
-// ---- Test helpers ----
 let passed = 0
 let failed = 0
 
+// --- resolveDbPath / getFallbackDbPath ---
+console.log("\n--- resolveDbPath / getFallbackDbPath ---")
+
+const isWin = platform() === "win32"
+const pJoin = isWin ? win32 : posix
+
+ok("getFallbackDbPath: windows-style home", () => {
+	assert.strictEqual(getFallbackDbPath({ home: "C:\\Users\\Test" }), "C:\\Users\\Test\\.local\\share\\opencode\\opencode.db")
+})
+
+ok("getFallbackDbPath: posix-style home", () => {
+	assert.strictEqual(getFallbackDbPath({ home: "/home/test" }), pJoin.join("/home/test", ".local", "share", "opencode", "opencode.db"))
+})
+
+await okAsync("resolveDbPath: uses CLI output (trimmed)", async () => {
+	const path = await resolveDbPath({ exec: async () => "C:\\real\\opencode.db\n" })
+	assert.strictEqual(path, "C:\\real\\opencode.db")
+})
+
+await okAsync("resolveDbPath: falls back to platform convention when CLI throws", async () => {
+	const path = await resolveDbPath({
+		exec: async () => {
+			throw new Error("cli unavailable")
+		},
+		home: "/home/test",
+	})
+	assert.strictEqual(path, pJoin.join("/home/test", ".local", "share", "opencode", "opencode.db"))
+})
+
+await okAsync("resolveDbPath: falls back when CLI returns empty", async () => {
+	const path = await resolveDbPath({ exec: async () => "   ", home: "C:\\Users\\Test" })
+	assert.strictEqual(path, "C:\\Users\\Test\\.local\\share\\opencode\\opencode.db")
+})
+
+// ---- Test helpers ----
 function ok(label, fn) {
 	try {
 		fn()
