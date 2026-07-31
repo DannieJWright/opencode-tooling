@@ -33,27 +33,30 @@ export async function resolveDbPath({ exec = runDbPathCommand, home = homedir() 
 const SESSION_COLUMNS = ["id", "title", "directory", "time_created", "time_updated", "parent_id", "time_archived"]
 
 export function checkSchema(db) {
-	const row = db
-		.query(
-			"SELECT COUNT(*) AS c FROM pragma_table_info('session') WHERE name IN ('id','title','directory','time_created','time_updated','parent_id','time_archived')"
-		)
-		.get()
+	if (!db?.query) return false
+	const result = db.query(
+		"SELECT COUNT(*) AS c FROM pragma_table_info('session') WHERE name IN ('id','title','directory','time_created','time_updated','parent_id','time_archived')"
+	)
+	if (!result?.get) return false
+	const row = result.get()
 	return row.c === SESSION_COLUMNS.length
 }
 
 export function querySessions(db, limit, includeArchived) {
+	if (!db?.query) return []
 	const archivedFilter = includeArchived ? "" : "AND time_archived IS NULL"
-	return db
-		.query(
-			`SELECT id, title, directory, time_updated, time_created FROM session
-			 WHERE parent_id IS NULL ${archivedFilter}
-			 ORDER BY time_updated DESC
-			 LIMIT ?`
-		)
-		.all(limit)
+	const result = db.query(
+		`SELECT id, title, directory, time_updated, time_created FROM session
+		 WHERE parent_id IS NULL ${archivedFilter}
+		 ORDER BY time_updated DESC
+		 LIMIT ?`
+	)
+	if (!result?.all) return []
+	return result.all(limit)
 }
 
 export function readSessions(dbPath, DatabaseImpl, limit, includeArchived) {
+	if (typeof DatabaseImpl !== "function") return { error: "missing", path: dbPath ?? "" }
 	let db
 	try {
 		db = new DatabaseImpl(dbPath, { readonly: true })

@@ -11,13 +11,16 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // ---- Dynamic import of real plugin functions ----
 const pluginPath = resolve(__dirname, "..", "plugin", "recent-sessions.js")
-let formatRelativeTime, getResumeCmd, resolveDbPath, getFallbackDbPath
+let formatRelativeTime, getResumeCmd, resolveDbPath, getFallbackDbPath, checkSchema, querySessions, readSessions
 try {
 	const plugin = await import(pathToFileURL(pluginPath).href)
 	formatRelativeTime = plugin.formatRelativeTime
 	getResumeCmd = plugin.getResumeCmd
 	resolveDbPath = plugin.resolveDbPath
 	getFallbackDbPath = plugin.getFallbackDbPath
+	checkSchema = plugin.checkSchema
+	querySessions = plugin.querySessions
+	readSessions = plugin.readSessions
 } catch (e) {
 	console.error(`[FATAL] Could not import plugin: ${e.message}`)
 	process.exit(1)
@@ -76,6 +79,77 @@ async function okAsync(label, asyncFn) {
 
 // Fixed reference timestamp for deterministic tests
 const NOW = 1_000_000_000_000
+
+// --- Defensive export guards ---
+console.log("\n--- Defensive export guards ---")
+
+ok("checkSchema(undefined) returns false", () => {
+	assert.strictEqual(checkSchema(undefined), false)
+})
+
+ok("checkSchema(null) returns false", () => {
+	assert.strictEqual(checkSchema(null), false)
+})
+
+ok("checkSchema({}) returns false — no .query", () => {
+	assert.strictEqual(checkSchema({}), false)
+})
+
+ok("checkSchema({ query: null }) returns false — query is not a function", () => {
+	assert.strictEqual(checkSchema({ query: null }), false)
+})
+
+ok("checkSchema({ query: () => null }) returns false — query returns null (no .get)", () => {
+	assert.strictEqual(checkSchema({ query: () => null }), false)
+})
+
+ok("checkSchema({ query: () => ({}) }) returns false — query returns object without .get", () => {
+	assert.strictEqual(checkSchema({ query: () => ({}) }), false)
+})
+
+ok("querySessions(undefined) returns []", () => {
+	assert.deepStrictEqual(querySessions(undefined), [])
+})
+
+ok("querySessions(null) returns []", () => {
+	assert.deepStrictEqual(querySessions(null), [])
+})
+
+ok("querySessions({}) returns [] — no .query", () => {
+	assert.deepStrictEqual(querySessions({}), [])
+})
+
+ok("querySessions({ query: null }) returns [] — query is not a function", () => {
+	assert.deepStrictEqual(querySessions({ query: null }), [])
+})
+
+ok("querySessions({ query: () => null }) returns [] — query returns null (no .all)", () => {
+	assert.deepStrictEqual(querySessions({ query: () => null }), [])
+})
+
+ok("querySessions({ query: () => ({}) }) returns [] — query returns object without .all", () => {
+	assert.deepStrictEqual(querySessions({ query: () => ({}) }), [])
+})
+
+ok("readSessions with undefined DatabaseImpl returns error object", () => {
+	const result = readSessions("/some/path", undefined, 10, false)
+	assert.strictEqual(result.error, "missing")
+})
+
+ok("readSessions with null DatabaseImpl returns error object", () => {
+	const result = readSessions("/some/path", null, 10, false)
+	assert.strictEqual(result.error, "missing")
+})
+
+ok("readSessions with string DatabaseImpl returns error object — truthy but not a function", () => {
+	const result = readSessions("/some/path", "not-a-constructor", 10, false)
+	assert.strictEqual(result.error, "missing")
+})
+
+ok("readSessions with plain object DatabaseImpl returns error object — truthy but not a constructor", () => {
+	const result = readSessions("/some/path", {}, 10, false)
+	assert.strictEqual(result.error, "missing")
+})
 
 // --- formatRelativeTime ---
 console.log("\n--- formatRelativeTime ---")
