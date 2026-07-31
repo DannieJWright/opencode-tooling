@@ -75,19 +75,17 @@ export function readSessions(dbPath, DatabaseImpl, limit, includeArchived) {
 // --- Experimental API session fetch ---
 
 async function fetchGlobalSessions(client, serverUrl, limit, includeArchived) {
-	try {
-		const url = new URL("/experimental/session", serverUrl)
-		url.searchParams.set("limit", String(Math.min(limit, 100)))
-		url.searchParams.set("archived", String(includeArchived))
+	const url = new URL("/experimental/session", serverUrl)
+	url.searchParams.set("limit", String(Math.min(limit, 100)))
+	url.searchParams.set("archived", String(includeArchived))
 
-		const response = await fetch(url.toString())
-		const data = await response.json()
-		const sessions = Array.isArray(data) ? data : data?.data ?? []
-		if (!Array.isArray(sessions) || sessions.length === 0) return null
-		return sessions
-	} catch {
-		return null
-	}
+	const response = await fetch(url.toString())
+	if (!response.ok) throw new Error(`experimental session endpoint failed: ${response.status}`)
+
+	const data = await response.json()
+	const sessions = Array.isArray(data) ? data : data?.data ?? []
+	if (!Array.isArray(sessions) || sessions.length === 0) return null
+	return sessions
 }
 
 // --- Output formatting (behavior unchanged from previous implementation) ---
