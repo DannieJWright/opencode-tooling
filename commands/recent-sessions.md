@@ -3,4 +3,4 @@ description: "List recent OpenCode sessions across all working directories to he
 subtask: false
 ---
 
-Call the `recent_sessions` tool and display the result to the user.
+Call the `recent_sessions` tool and display the full markdown table to the user.
