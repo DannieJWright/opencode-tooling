@@ -5,3 +5,5 @@ models/*
 compactions/*
 runs/*
 data/*
+node_modules/
+.slim/deepwork/
