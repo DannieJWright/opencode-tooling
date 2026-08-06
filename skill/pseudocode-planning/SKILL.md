@@ -25,7 +25,7 @@ Read source, test, and config files the spec references, plus enough of the code
 name real paths and existing patterns. For a greenfield spec there is nothing to read.
 
 Read another spec or plan document **only if the source spec cites it by path**. Prior
-documents in `docs/superpowers/plans/` and `docs/pseudocode/` describe superseded
+documents in `docs/superpowers/plans/`, `docs/superpowers/specs/`, and `docs/pseudocode/` describe superseded
 designs; reading them — or surfacing them through a broad content search — contaminates
 the output. Scope searches to source, test, and config paths.
 
@@ -167,7 +167,7 @@ Check the finished document against the spec with fresh eyes:
    to test, Logic, Open questions.
 3. **File map:** `## File Structure` and the union of all `Files:` entries match.
 4. **Interface consistency:** a later task's `Consumes` matches an earlier task's
-   `Produces` exactly. `clearLayers()` in Task 3 and `clearFullLayers()` in Task 7 is a bug.
+   `Produces` exactly.
 5. **Shape scan:** every code block is pseudocode unless marked decided.
 
 Fix inline and move on.
@@ -189,7 +189,7 @@ Wait for approval. Do not invoke `writing-plans` yourself.
 
 | Mistake | Fix |
 |---|---|
-| Sections named after source files (`## CLI Import`) | Sections are `### Task N:` deliverables |
+| Sections named after source files (`## CLI Import`) | Sections are `### Task N: <deliverables>` |
 | Test cases in a prose matrix table | GIVEN/WHEN/THEN assertions per task |
 | A runnable code block that isn't marked decided | Pseudocode |
 | Constraints scattered through prose | Collected verbatim under `## Global Constraints` |
