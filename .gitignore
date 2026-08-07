@@ -6,4 +6,5 @@ compactions/*
 runs/*
 data/*
 node_modules/
+.worktrees/
 .slim/deepwork/
