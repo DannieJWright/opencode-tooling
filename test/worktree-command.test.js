@@ -10,8 +10,9 @@ const markdown = await readFile(join(root, "skill", "worktree", "SKILL.md"), "ut
 assert.match(markdown, /name: worktree/)
 assert.match(markdown, /description: Create a Git worktree for a subject in one shell call and return its absolute path on the OpenCode server/)
 assert.match(markdown, /Make exactly one shell tool call/)
-assert.match(markdown, /git rev-parse --path-format=absolute --git-common-dir/)
+assert.match(markdown, /realpath.*git rev-parse --git-common-dir/)
 assert.match(markdown, /git worktree add -b/)
+assert.match(markdown, /realpath "\$destination"/)
 assert.match(markdown, /absolute path on the OpenCode server/)
 
 const repo = await mkdtemp(join(tmpdir(), "worktree-command-"))
@@ -27,15 +28,18 @@ await run(["commit", "-qm", "initial"])
 const scriptFor = (slug) => `
 set -euo pipefail
 slug="${slug}"
-common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
+common_dir=$(realpath "$(git rev-parse --git-common-dir)")
 root=$(dirname "$common_dir")
-destination="$root/.worktrees/$slug"
+worktrees_dir="$root/.worktrees"
+destination="$worktrees_dir/$slug"
 git check-ref-format --branch "$slug" >/dev/null
 if git show-ref --verify --quiet "refs/heads/$slug"; then exit 1; fi
 if [[ -e "$destination" || -L "$destination" ]]; then exit 1; fi
-mkdir -p "$root/.worktrees"
+mkdir -p "$worktrees_dir"
+worktrees_dir=$(realpath "$worktrees_dir")
+destination="$worktrees_dir/$slug"
 git worktree add -b "$slug" "$destination" HEAD >&2
-printf "%s\\n" "$destination"
+realpath "$destination"
 `
 const slug = "single-shell-test"
 const output = await Bun.$`bash -lc ${scriptFor(slug)}`.cwd(repo).text()
@@ -43,7 +47,9 @@ const expected = join(repo, ".worktrees", slug)
 
 assert.equal(output.trim(), expected)
 assert.equal(resolve(output.trim()), output.trim(), "Output must be an absolute path")
+assert.equal(await Bun.file(join(output.trim(), "README.md")).text(), "test\n", "Printed path must be the created directory")
 assert.equal((await run(["branch", "--show-current"], expected)).text().trim(), slug)
+assert.equal((await run(["worktree", "list", "--porcelain"])).text().includes(`worktree ${output.trim()}\n`), true, "Git must register the printed path")
 
 const nestedSlug = "nested-worktree-test"
 const nestedOutput = await Bun.$`bash -lc ${scriptFor(nestedSlug)}`.cwd(expected).text()

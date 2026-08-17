@@ -16,9 +16,10 @@ Follow these requirements exactly:
 bash -lc '
 set -euo pipefail
 slug="<slug>"
-common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
+common_dir=$(realpath "$(git rev-parse --git-common-dir)")
 root=$(dirname "$common_dir")
-destination="$root/.worktrees/$slug"
+worktrees_dir="$root/.worktrees"
+destination="$worktrees_dir/$slug"
 
 git check-ref-format --branch "$slug" >/dev/null
 if git show-ref --verify --quiet "refs/heads/$slug"; then
@@ -30,9 +31,11 @@ if [[ -e "$destination" || -L "$destination" ]]; then
   exit 1
 fi
 
-mkdir -p "$root/.worktrees"
+mkdir -p "$worktrees_dir"
+worktrees_dir=$(realpath "$worktrees_dir")
+destination="$worktrees_dir/$slug"
 git worktree add -b "$slug" "$destination" HEAD >&2
-printf "%s\n" "$destination"
+realpath "$destination"
 '
 ```
 
