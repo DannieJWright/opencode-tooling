@@ -41,7 +41,7 @@ async function createWorktree(subject, directory) {
 		.map((line) => line.slice("worktree ".length))
 	if (!registeredPaths.includes(canonicalPath)) throw new Error(`Git did not register the created worktree at ${canonicalPath}`)
 
-	return canonicalPath
+	return destination
 }
 
 export default async () => ({
