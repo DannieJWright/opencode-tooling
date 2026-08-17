@@ -10,7 +10,8 @@ const skill = await readFile(join(root, "skill", "worktree", "SKILL.md"), "utf8"
 
 assert.match(skill, /Call `create_worktree` exactly once/)
 assert.match(skill, /complete subject exactly as supplied/)
-assert.match(skill, /output exactly and verbatim/)
+assert.match(skill, /Ubuntu absolute path:/)
+assert.match(skill, /Do not use a fenced code block or inline code/)
 assert.doesNotMatch(skill, /git worktree add/)
 
 const repo = await mkdtemp(join(tmpdir(), "worktree-tool-"))
