@@ -1,11 +1,9 @@
 ---
-description: Create a Git worktree for a subject and print its absolute server path
-agent: build
+name: worktree
+description: Create a Git worktree for a subject in one shell call and return its absolute path on the OpenCode server.
 ---
 
-Create a Git worktree for this subject:
-
-$ARGUMENTS
+Create a Git worktree for the user's subject.
 
 Follow these requirements exactly:
 

@@ -5,9 +5,10 @@ import { join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)))
-const markdown = await readFile(join(root, "commands", "worktree.md"), "utf8")
+const markdown = await readFile(join(root, "skill", "worktree", "SKILL.md"), "utf8")
 
-assert.match(markdown, /description: Create a Git worktree for a subject and print its absolute server path/)
+assert.match(markdown, /name: worktree/)
+assert.match(markdown, /description: Create a Git worktree for a subject in one shell call and return its absolute path on the OpenCode server/)
 assert.match(markdown, /Make exactly one shell tool call/)
 assert.match(markdown, /git rev-parse --path-format=absolute --git-common-dir/)
 assert.match(markdown, /git worktree add -b/)
