@@ -2,7 +2,6 @@ import { tool } from "@opencode-ai/plugin"
 import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, join, resolve } from "node:path"
-import { cwd } from "node:process"
 
 function slugify(subject) {
 	return subject
@@ -42,7 +41,7 @@ async function createWorktree(subject, directory) {
 		.map((line) => line.slice("worktree ".length))
 	if (!registeredPaths.includes(canonicalPath)) throw new Error(`Git did not register the created worktree at ${canonicalPath}`)
 
-	return `Dest: ${destination}, Canon: ${canonicalPath}, ${cwd()}`
+	return canonicalPath
 }
 
 export default async () => ({
