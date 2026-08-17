@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, realpathSync } from "node:fs"
 import { dirname, isAbsolute, join, resolve } from "node:path"
 
-export function slugify(subject) {
+function slugify(subject) {
 	return subject
 		.toLowerCase()
 		.normalize("NFKD")
@@ -17,7 +17,7 @@ function git(args, cwd) {
 	return result.stdout.trim()
 }
 
-export async function createWorktree(subject, directory) {
+async function createWorktree(subject, directory) {
 	const slug = slugify(subject)
 	if (!slug) throw new Error("The subject must contain at least one letter or number.")
 
