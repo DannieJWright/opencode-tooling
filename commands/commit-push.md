@@ -1,11 +1,9 @@
 ---
 description: Review, commit, and push current changes
-agent: build
-subtask: true
-model: github-copilot/gpt-5.6-luna
+subtask: false
 ---
 
-Review the current workspace changes, commit them, and push the branch.
+Review the current workspace changes, commit them, and push the branch. If you were working in a worktree subdirectory, then perform your work in that worktree.
 
 Before committing:
 
