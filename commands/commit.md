@@ -1,11 +1,9 @@
 ---
 description: Review current changes and commit them
-agent: build
-subtask: true
-model: github-copilot/gpt-5.6-luna
+subtask: false
 ---
 
-Review the current workspace changes and commit them.
+Review the current workspace changes and commit them. If you were working in a worktree subdirectory, then perform your work in that worktree.
 
 Before committing:
 

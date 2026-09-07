@@ -1,10 +1,9 @@
 ---
-description: "You are saving important information from the current context for future use."
+description: "Save information to memory system."
 subtask: false
 ---
 
-Load the `remember-this` skill and follow its instructions precisely.
-
-User context: $ARGUMENTS
-
-Follow the full workflow — as defined by the skill - to store the requested information.
+Load the `remember-this` skill. Here is the user context: 
+<user_context>
+$ARGUMENTS
+</user_context>
