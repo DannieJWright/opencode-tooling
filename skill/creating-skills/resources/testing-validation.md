@@ -59,7 +59,7 @@ Run this before deploying. A complex skill may warrant extra self-review beyond 
 - [ ] All hardcoded specifics are parameterized into a Configuration table (if applicable)
 - [ ] Variable names use (`CONSTANT_CASE`); no remaining project-specific references inline
 - [ ] File input/output formats documented where the skill consumes/produces files
-- [ ] Subagent templates include variable injection and an explicit return format (if applicable)
+- [ ] Each dispatched subagent has its own template file under `subagents/<role>.md` (not embedded in SKILL.md), with variable injection and an explicit return format (if applicable)
 
 **Design & testability**
 - [ ] A design pattern was chosen and reflected in the structure (`authoring-guide.md` §4)

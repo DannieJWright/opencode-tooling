@@ -65,7 +65,7 @@ Skills load in three levels: frontmatter (always), SKILL.md body (when relevant)
 
 ### Example multi-file layout
 
-A generated skill keeps `SKILL.md` at its root and nests supporting material in subdirectories: `resources/` for guidance to read, `scripts/` for deterministic code to run, and `assets/` for static output material. Everything below is loaded or run on demand — never preloaded into context:
+A generated skill keeps `SKILL.md` at its root and nests supporting material in subdirectories: `resources/` for guidance to read, `subagents/` for one prompt template per dispatched subagent role, `scripts/` for deterministic code to run, and `assets/` for static output material. Everything below is loaded or run on demand — never preloaded into context:
 
 ```
 your-skill-name/
@@ -75,6 +75,9 @@ your-skill-name/
 │   ├── authoring-guide.md        # Detailed how-to rules for producing output: formats, naming, step-by-step guidance, best practices. Load during the work.
 │   ├── testing-validation.md     # Checklists + test cases (should/should-NOT-trigger, Given/When/Then) and the final verification gate. Load before finishing.
 │   └── examples.md               # Complete worked examples + good/bad pairs. Load only when told to compare against an example; never preload.
+├── subagents/                    # One .md prompt template per dispatched subagent role — loaded/dispatched on demand, NOT embedded in SKILL.md
+│   ├── reviewer.md               # Prompt for the review subagent: parameterized task + config injection + rules + exact return format (see §7).
+│   └── researcher.md             # Prompt for a research subagent, same shape as above with its own variables and return contract.
 ├── scripts/                      # Executable code for deterministic work — run as needed, not read into context as prose
 │   ├── validate.py               # Deterministic gate: checks output format/structure before the skill finishes (code is reliable where prose isn't).
 │   └── fetch_data.sh             # Gathers or normalizes input data referenced by the workflow.
@@ -90,6 +93,7 @@ The Resources table near the top of SKILL.md maps each path to its purpose so th
 | `resources/authoring-guide.md` | The detailed rules and techniques for producing output — formats, naming requirements, step-by-step guidance. Load during the work. |
 | `resources/testing-validation.md` | Checklists, test cases, signals to watch for, and the final verification gate. Load before declaring done. |
 | `resources/examples.md` | Complete worked examples plus good/bad pairs; load only when comparing against an example is called for. |
+| `subagents/<role>.md` | Prompt template for one dispatched subagent role — parameterized task, config injection, rules, and an exact return format (one file per role; see §7). Loaded/dispatched on demand, not embedded in SKILL.md. |
 | `scripts/validate.py` | Deterministic validation of output format — run as a must-pass gate instead of relying on prose checks. |
 | `assets/report-template.md` | Static skeleton filled in when producing a report; part of the output, not loaded into context.
 
@@ -139,7 +143,8 @@ Example 1: [common scenario] ... Result: ...
 
 ## Output Format (if applicable)        <!-- structure + append/overwrite rules -->
 
-## Subagent Prompt Template (if applicable)   <!-- see §7 -->
+## Delegation / Subagents (if applicable)   <!-- one line per subagent; full prompt lives in subagents/<role>.md, see §7 -->
+- `<role>` — when it is used. Template: `subagents/<role>.md`.
 
 ## Common Issues                         <!-- Error / Cause / Solution; see §8 -->
 ```
@@ -189,10 +194,12 @@ Rules: replace file paths with path variables; technology mentions with (`TECH_S
 
 ## 7. Subagent prompt templates
 
-If the skill dispatches subagents, author each template *before* writing SKILL.md so it is ready to embed. Include a `## Subagent Prompt Template` section with instructions to replace `(VAR)` with configuration values:
+If the skill dispatches subagents, do **not** embed their prompts in SKILL.md. Store each one as its own file under a `subagents/` directory — one `.md` per subagent role (e.g., `subagents/reviewer.md`, `subagents/researcher.md`). Author each template *before* writing SKILL.md so it is ready to reference, and have SKILL.md point at the files (a "Delegation / Subagents" section or a row in the Resources table) rather than reproducing their text.
+
+Each `subagents/<role>.md` file contains:
 
 ```markdown
-[parameterized prompt text]
+[parameterized prompt text for this subagent]
 
 Configuration:
 [only the variables this subagent needs, in the same table format as §6]
@@ -204,7 +211,7 @@ Return findings in this exact format:
 [explicit output-format specification]
 ```
 
-Inject all configuration variables a subagent needs using parenthesized names (`VAR`). Specify an explicit return format so results come back parseable.
+Inject all configuration variables a subagent needs using parenthesized names (`VAR`). Specify an explicit return format so results come back parseable. Keep each template self-contained — it must read sensibly on its own when dispatched, including any constraints it inherits from the parent skill.
 
 ## 8. Specificity, error handling & troubleshooting
 

@@ -23,7 +23,7 @@ Generate reusable AI agent skills from specific prompts, workflows, or ideas. Ge
 | `resources/testing-validation.md` | How to prove it works: trigger tests (should/should-NOT-trigger), functional test cases, negative triggers, under/over-triggering signals with the iteration loop, and the final verification checklist. Load before declaring a skill done. |
 | `resources/examples.md` | One complete prompt → SKILL.md walkthrough plus good/bad frontmatter and parameterization pairs. **Never load this directly** — consult it only when authoring-guide or testing-validation directs you to compare against an example. |
 
-Supporting material lives in subdirectories of the skill folder: `resources/` for guidance read on demand (the files above), `scripts/` for deterministic code run as needed, and `assets/` for static output material — see `resources/authoring-guide.md`.
+Supporting material lives in subdirectories of the skill folder: `resources/` for guidance read on demand (the files above), `subagents/` for one prompt template per dispatched subagent role, `scripts/` for deterministic code run as needed, and `assets/` for static output material — see `resources/authoring-guide.md`.
 
 ## Workflow
 
@@ -52,7 +52,7 @@ digraph workflow {
 2. **Analyze source** — If a specific prompt was provided, identify hardcoded specifics (paths, tech stack, topic terms, user preferences) and subagent delegation points.
 3. **Pick a pattern** — Using `resources/authoring-guide.md`, choose the design pattern that fits the use cases (sequential orchestration, iterative refinement, context-aware tool selection, or domain-specific intelligence). This shapes the structure you will write.
 4. **Generalize & parameterize** — Extract hardcoded specifics into configurable variables and replace them with variable references (rules in `resources/authoring-guide.md`).
-5. **Define subagents** — If the skill dispatches subagents, author their parameterized prompt templates (`resources/authoring-guide.md`), before writing SKILL.md so they are ready to include.
+5. **Define subagents** — If the skill dispatches subagents, store each as its own file under `subagents/<role>.md` (per `resources/authoring-guide.md`) *before* writing SKILL.md so it is ready to reference; point at these files from SKILL.md rather than embedding the prompts.
 6. **Write the skill** — Generate SKILL.md and any resource files under `resources/` per `resources/authoring-guide.md`, applying progressive disclosure: keep SKILL.md lean and move detail into referenced resources (plus `scripts/` for deterministic code and `assets/` for static output material where useful).
 7. **Validate & test** — Run `resources/testing-validation.md`: build trigger tests and functional cases, wire in negative triggers, then complete the verification checklist before deploying.
 
