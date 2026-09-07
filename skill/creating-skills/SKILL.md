@@ -1,296 +1,71 @@
 ---
 name: creating-skills
 description: >
-  Use when creating a new AI agent skill from a prompt, workflow, or idea.
-  Triggers: "create a skill", "make a skill", "turn this prompt into a skill",
-  "convert to skill", "generalize this prompt", "parameterize a workflow",
-  or any task requiring generating a reusable SKILL.md document with configurable variables.
+  Turns a prompt, workflow, or idea into a reusable AI agent skill — SKILL.md with
+  proper YAML frontmatter, parameterized configuration, subagent templates, and
+  progressive-disclosure resources. Use when the user says "create a skill",
+  "make a skill", "turn this prompt into a skill", "convert to skill",
+  "generalize this prompt", or "parameterize a workflow".
 ---
 
 # Creating Skills
 
-Generate reusable AI agent skills from specific prompts, workflows, or ideas. Generalizes concrete instructions into configurable templates.
+Generate reusable AI agent skills from specific prompts, workflows, or ideas. Generalizes concrete instructions into configurable templates and structures the output so it follows proven skill-design best practices: use-case-driven, trigger-precise frontmatter, actionable instructions, progressive disclosure, and testable behavior.
 
-## Overview
+**Announce at start:** "I'm using the creating-skills skill."
 
-Takes a specific prompt or workflow and transforms it into a generic, reusable skill document. The process extracts hardcoded specifics into configurable variables, parameterizes user-specific details, and structures the output according to skill conventions.
+## Resources (under `resources/`)
+
+| File | Contains |
+|---|---|
+| `resources/requirements-interview.md` | The interview protocol: use-case-first definition, success criteria, and the clarifying questions that establish shared understanding before authoring. Load first in every run. |
+| `resources/authoring-guide.md` | How to build the skill: frontmatter rules (WHAT + WHEN), naming/structure requirements, the progressive-disclosure multi-file pattern for generated skills, a design-pattern menu, specificity and error-handling best practices, plus parameterization and subagent-template authoring. Load when writing SKILL.md or its resources. |
+| `resources/testing-validation.md` | How to prove it works: trigger tests (should/should-NOT-trigger), functional test cases, negative triggers, under/over-triggering signals with the iteration loop, and the final verification checklist. Load before declaring a skill done. |
+| `resources/examples.md` | One complete prompt → SKILL.md walkthrough plus good/bad frontmatter and parameterization pairs. **Never load this directly** — consult it only when authoring-guide or testing-validation directs you to compare against an example. |
+
+Supporting material lives in subdirectories of the skill folder: `resources/` for guidance read on demand (the files above), `subagents/` for one prompt template per dispatched subagent role, `scripts/` for deterministic code run as needed, and `assets/` for static output material — see `resources/authoring-guide.md`.
 
 ## Workflow
 
 ```dot
 digraph workflow {
     rankdir=LR;
-    A["Invoke brainstorming"] -> B["Gather skill requirements"];
-    B -> C{"Has source prompt?"};
-    C ->|"no"| D["Ask user for skill purpose, scope, triggers"];
-    C ->|"yes"| E["Analyze prompt"];
-    D -> E;
+    A["Interview user (resources/requirements-interview.md)"] -> B{"Has source prompt?"};
+    B ->|"no"| C["Capture 2-3 use cases + success criteria"];
+    B ->|"yes"| D["Analyze source for specifics & delegation points"];
+    C -> E;
+    D -> E["Pick a design pattern (resources/authoring-guide.md)"];
     E -> F{"Needs generalization?"};
-    F ->|"yes"| G["Extract configurable variables"];
-    F ->|"no"| J{"Has subagents?"};
-    G -> I["Parameterize all hardcoded values"];
+    F ->|"yes"| G["Extract configurable variables, parameterize"];
+    F ->|"no"| H;
+    G -> H{"Has subagents?"};
+    H ->|"yes"| I["Define subagent prompt template"];
+    H ->|"no"| J["Write SKILL.md + resources (resources/authoring-guide.md)"];
     I -> J;
-    J ->|"yes"| K["Define subagent prompt template"];
-    J ->|"no"| H["Write SKILL.md"];
-    K -> H;
-    H -> L["Verify & deploy"];
+    J -> K["Validate & test (resources/testing-validation.md)"];
 }
 ```
 
 ### Execution Steps
 
-1. **Invoke brainstorming** — Use brainstorming skill to understand scope, purpose, and design
-2. **Gather requirements** — Collect skill purpose, target use cases, triggering conditions, and subagent roles
-3. **Analyze source** — If a specific prompt was provided, identify all hardcoded specifics and subagent delegation points
-4. **Extract variables** — Pull file paths, tech stack, topic details into configurable variables
-5. **Parameterize** — Replace all hardcoded values with variable references
-6. **Document formats** — Define input/output file formats
-7. **Define subagents** — If the skill spawns subagents, write their parameterized prompt templates using the configurable variables
-8. **Write skill** — Generate the complete SKILL.md
-9. **Verify** — Confirm the generated skill follows conventions
-
-## Step 1: Invoke Brainstorming
-
-Always invoke the brainstorming skill before creating a skill. This ensures proper design exploration.
-
-If no brainstorming-style skill is available, ask clarifying questions inline:
-- What problem does this skill solve?
-- When should an agent trigger it?
-- What are the success criteria?
-
-## Step 2: Gather Skill Requirements
-
-If the user has not provided a source prompt or sufficient context, ask these questions one at a time:
-
-1. **Purpose**: What does this skill help an agent do?
-2. **Scope**: What specific scenarios should it handle?
-3. **Triggers**: What situations should activate this skill?
-4. **Inputs**: Does it consume any inputs (files/details/webpages/etc)? If so, what format?
-5. **Outputs**: Does it produce any output (files/details/webpages/etc)? If so, what format?
-6. **Subagents**: Does it dispatch subagents? If so, what are their roles?
-
-## Step 3: Analyze Source Prompt
-
-When a specific prompt is provided for conversion, scan for:
-
-- File paths (absolute, relative, or hardcoded names)
-- Technology references (frameworks, languages, tools)
-- Topic-specific details (project names, domain terms)
-- User-specific preferences (naming conventions, style choices)
-- Output format expectations (structure, sections, ordering)
-- Conditions or decision points
-- Use of subagents (associated tasks, when to delegate, subagent prompt format)
-
-## Step 4: Extract Configurable Variables
-
-Create a configuration table containing all extracted variables.
-
-### Variable Classification
-
-| Classification | Behavior |
-|----------------|----------|
-| `Default: <value>` | Auto-uses value, user may override |
-| `Example: <value>` | Requires user to supply before proceeding |
-
-
-### Table Structure
-
-Place this near the top of the generated skill, after the overview, keep in mind there are instructions within the following markdown that MUST also need to be included in the generated skill for the invoking agent:
-
-```markdown
-## Configuration
-
-These configurable values are for you (the AI agent). It is critical that you keep them in mind within the context of your input, as they serve as placeholders within your input. Values defined with "Default"s should be used by default, unless requested by the user to use a different value. Values defined with "Example" (no default) MUST be obtained from the context of your prompt based on the "purpose" for that value (ask the user if there is ambiguity). 
-
-| Variable | Purpose | Default/Example |
-|----------|---------|-----------------|
-| (`VAR_NAME`) | What this controls | Default: `value` |
-| (`VAR_NAME`) | What this controls | Example: `value` if user must decide |
-```
-
-### Naming Convention
-
-- Use (`CONSTANT_CASE`) for variable names - upper-snakecase surrounded by backticks which are surrounded by parenthesis
-- Prefix with domain context if multiple related variables exist
-- Examples: (`INPUT_FILE`), (`OUTPUT_DIR`), (`TECH_STACK`), (`ANALYSIS_DEPTH`)
-
-## Step 5: Parameterize Prompt
-
-Replace all hardcoded specifics with variable references:
-
-### Before (specific):
-```
-Read the guide at docs/research/guide.md. The project is a Unity C# 2D game.
-```
-
-### After (parameterized):
-```
-Read the guide at (`GUIDE_DOC`). The project context is (`TECH_STACK`).
-```
-
-### Rules:
-- Replace file paths with path variables
-- Replace technology mentions with (`TECH_STACK`) or a domain-specific variable
-- Replace project names with (`PROJECT_NAME`) or equivalent
-- Replace style preferences with configurable options
-- Keep structural instructions (format, ordering) as literal text
-
-## Step 6: Document File Formats
-
-If the skill consumes or produces files, document their format in the generated skill.
-
-### Input File Format Section
-
-Include a section titled `## Input: [Variable Reference]` that describes:
-- The expected structure with an example
-- Key format requirements as a bullet list
-
-### Output File Format Section
-
-Include a section titled `## Output: [Variable Reference]` that describes:
-- The generated file structure with an example
-- Behavior: append vs overwrite, create-if-missing rules
-
-## Step 7: Define Subagent Prompts
-
-If the skill dispatches subagents, include a parameterized prompt template. **This must be done before Step 8 (Write SKILL.md) so the template is ready to include.**
-
-### Template Structure
-
-Include a `## Subagent Prompt Template` section with instructions to replace `(VAR_NAME)` with configuration values. The template should contain:
-
-- Parameterized prompt text with parenthesized variables: (`VAR`)
-- Configuration injection block listing all needed variables
-- Subagent rules (mirrored from parent skill constraints)
-- Explicit return format specification
-
-Format
-```markdown
-[parameterized prompt text]
-
-Configuration:
-[relevant variables for subagent in same format as table from Step 4]
-
-Rules:
-- [list subagent rules]
-
-Return findings in this exact format:
-[output format specification]
-```
-
-### Variable Injection
-
-Include all configuration variables that a subagent needs. Use parenthesized variable names (`VAR`) throughout the template - upper-snakecase surrounded with backticks which are surrounded with parenthesis.
-
-## Step 8: Write SKILL.md
-
-Generate the complete skill document. The structure below is a **minimum baseline** — a starting point. Add any additional sections that improve clarity, are relevant to the skill's domain, or help the invoking agent use the skill effectively. The goal is a well-structured, self-contained document; the template is a floor, not a ceiling.
-
-```yaml
----
-name: skill-name-hyphenated
-description: Use when [specific triggering conditions and symptoms]
----
-```
-
-```markdown
-# Skill Name
-
-## Overview
-[Core principle in 1-2 sentences]
-
-## Configuration
-[Variable table from Step 4]
-[Variable explansion explaination from Step 4]
-
-## When to Use
-[Triggering conditions]
-
-## Input Format (if applicable)
-[From Step 6]
-
-## Workflow
-[Process flowchart or numbered steps]
-
-## Output Format (if applicable)
-[From Step 6]
-
-## Subagent Prompt Template (if applicable)
-[From Step 7]
-
-## Common Mistakes
-[Specific pitfalls]
-```
-
-### Adding Extra Sections
-
-Beyond the baseline above, consider adding sections that fit the skill:
-
-- **Rules / Constraints** — behavioral guardrails the agent should follow
-- **Examples** — concrete input/output pairs to disambiguate intent
-- **Decision Flow** — conditions or branching logic for complex workflows
-- **References** — links to docs, prior research, or related skills
-- **Tips / Best Practices** — heuristics that improve results
-- **Troubleshooting** — common failure modes and how to recover
-
-There are no prescribed section names or a hard limit. Structure serves content, not the reverse.
-
-### Frontmatter Rules
-
-- `name`: lowercase hyphenated, only letters/numbers/hyphens
-- `description`: start with "Use when..." — describe triggers only, NOT workflow
-- Keep description under 500 characters when possible
-
-## Step 9: Verify
-
-### Generated Skill Checklist
-
-These are minimum checks. A well-crafted skill may pass additional self-review depending on its complexity.
-
-- [ ] Frontmatter has `description` starting with "Use when..."
-- [ ] Description describes triggers, NOT workflow
-- [ ] Configuration table present with variable classification
-- [ ] All hardcoded specifics are parameterized
-- [ ] File formats documented (if applicable)
-- [ ] Subagent template includes variable injection (if applicable)
-- [ ] Variable names use (`CONSTANT_CASE`)
-- [ ] No remaining project-specific references
-
-
-## Anti-Patterns
-
-### Hardcoded Paths
-```markdown
-<!-- ❌ BAD: hardcoded path inline -->
-Always read from docs/plan.md
-
-<!-- ✅ GOOD: use variable reference, define the default in the Configuration table -->
-Read from (`PLAN_FILE`)
-<!-- The Configuration table entry would specify: Default: `docs/plan.md` -->
-```
-
-### Over-Specific Descriptions
-```yaml
-<!-- ❌ BAD: describes workflow -->
-description: Spawns subagents that research topics from a guide document
-<!-- ✅ GOOD: describes triggers only -->
-description: Use when planning a project by researching multiple topics via subagents
-```
-
-### Missing Variable for Obvious Config
-```markdown
-<!-- ❌ BAD: hardcoded tech stack inline -->
-The project uses React with TypeScript
-
-<!-- ✅ GOOD: use variable reference, define in Configuration table -->
-The project uses (`TECH_STACK`)
-<!-- The Configuration table entry would specify: Example: `React with TypeScript` -->
-```
+1. **Interview** — Follow `resources/requirements-interview.md`. Establish the skill's purpose, 2–3 concrete use cases, trigger conditions, and success criteria before writing anything. If a brainstorming-style skill is available, invoke it to drive this exploration; otherwise run the interview protocol inline.
+2. **Analyze source** — If a specific prompt was provided, identify hardcoded specifics (paths, tech stack, topic terms, user preferences) and subagent delegation points.
+3. **Pick a pattern** — Using `resources/authoring-guide.md`, choose the design pattern that fits the use cases (sequential orchestration, iterative refinement, context-aware tool selection, or domain-specific intelligence). This shapes the structure you will write.
+4. **Generalize & parameterize** — Extract hardcoded specifics into configurable variables and replace them with variable references (rules in `resources/authoring-guide.md`).
+5. **Define subagents** — If the skill dispatches subagents, store each as its own file under `subagents/<role>.md` (per `resources/authoring-guide.md`) *before* writing SKILL.md so it is ready to reference; point at these files from SKILL.md rather than embedding the prompts.
+6. **Write the skill** — Generate SKILL.md and any resource files under `resources/` per `resources/authoring-guide.md`, applying progressive disclosure: keep SKILL.md lean and move detail into referenced resources (plus `scripts/` for deterministic code and `assets/` for static output material where useful).
+7. **Validate & test** — Run `resources/testing-validation.md`: build trigger tests and functional cases, wire in negative triggers, then complete the verification checklist before deploying.
+
+## Guardrails
+
+- CRITICAL: Do not emit a generated skill's frontmatter until its description states BOTH what the skill does AND when to use it (with concrete trigger phrases). See `resources/authoring-guide.md`.
+- CRITICAL: Do not declare a skill done until every item in the `resources/testing-validation.md` verification checklist passes.
+- Keep SKILL.md lean; move detailed documentation into resource files under `resources/` rather than inlining it (progressive disclosure).
+- The generated skill must be self-contained and portable — no local code imports, kebab-case naming that matches its folder.
 
 ## Deployment
 
-After generating a skill:
-1. Place in `skill/<name>/SKILL.md` within the repository
-2. Verify the naming matches the directory name
-3. Test by loading the skill and confirming it parses correctly
-
+After validating:
+1. Place the skill as `<name>/SKILL.md` inside whatever skills directory the target environment discovers (e.g., `skill/<name>/`, `.opencode/skills/`, or a global config path), with any sibling resource files alongside it.
+2. Verify the `name` field exactly matches the folder name (kebab-case).
+3. Test by loading the skill and confirming the frontmatter parses and its resources are reachable relative to the skill's own folder.
